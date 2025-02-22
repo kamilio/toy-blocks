@@ -1,0 +1,3 @@
+[tool.micropython]
+port = "/dev/ttyUSB0"
+board = "esp32"
