@@ -173,4 +173,4 @@ cython_debug/
 bin/
 
 # WiFi credentials
-# lib/wifi_config.py
+lib/wifi_config.py
