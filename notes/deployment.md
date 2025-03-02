@@ -31,19 +31,6 @@ The device will execute:
    - Starts debug LED sequence
    - Enters main loop with sleep management
 
-### Using Board Configurations
-
-```python
-from board_config import BoardConfig
-
-# Initialize board configuration
-board = BoardConfig('devkit1')  # or 'ttgo', or 'default'
-
-# Use board-specific pins
-led_pin = board.led_pin
-i2c_scl = board.i2c_scl
-```
-
 Ensure all physical connections match pin configurations in code, particularly:
 - Debug LED pins
 - MPU6050 connections (if used)

@@ -96,6 +96,9 @@ class MockWLAN:
     def disconnect(self):
         self._connected = False
 
+    def ifconfig(self):
+        return ('192.168.1.100', '255.255.255.0', '192.168.1.1', '8.8.8.8')
+
 mock_network = MagicMock()
 mock_network.WLAN = MockWLAN
 sys.modules['network'] = mock_network
@@ -117,3 +120,11 @@ def mock_get(url):
 mock_urequests = MagicMock()
 mock_urequests.get = mock_get
 sys.modules['urequests'] = mock_urequests
+
+# Mock uasyncio module
+async def mock_sleep(*args):
+    pass
+
+mock_uasyncio = MagicMock()
+mock_uasyncio.sleep = mock_sleep
+sys.modules['uasyncio'] = mock_uasyncio

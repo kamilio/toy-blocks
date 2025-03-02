@@ -168,3 +168,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# MicroPython firmware binaries
+bin/
+
+# WiFi credentials
+# lib/wifi_config.py
