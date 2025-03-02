@@ -1,2 +1,3 @@
 micropy-cli==4.2.2
 pytest==8.3.4
+beepy==1.0.7
