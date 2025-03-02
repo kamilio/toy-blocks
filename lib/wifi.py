@@ -1,5 +1,6 @@
 import network
 import uasyncio
+from wifi_config import WIFI_SSID, WIFI_PASSWORD
 
 class WiFi:
     def __init__(self):
@@ -7,7 +8,7 @@ class WiFi:
         self.wlan.active(True)
         self._connected = False
         
-    async def connect(self, ssid, password, timeout=10):
+    async def connect(self, ssid = WIFI_SSID, password = WIFI_PASSWORD, timeout=10):
         if not self.wlan.isconnected():
             self.wlan.connect(ssid, password)
             elapsed_seconds = 0
