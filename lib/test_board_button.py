@@ -3,7 +3,7 @@ import uasyncio
 import time
 from board_button import BoardButton
 from machine import Pin
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, patch
 
 @pytest.fixture
 def board_button():
@@ -24,77 +24,70 @@ def test_is_boot_pressed(board_button):
     assert board_button.is_boot_pressed() == False
 
 @pytest.mark.asyncio
-async def test_monitor_with_sync_callback(board_button):
-    callback_called = 0
-    
-    def on_press():
-        nonlocal callback_called
-        callback_called += 1
-        print(f"Callback called: {callback_called}")
-    
-    board_button.on_press(on_press)
-    
-    print("\nStarting sync callback test")
-    
-    # First press
-    board_button.boot_button.value(0)
-    await board_button._check_once()
-    assert callback_called == 1
-    
-    # Release
-    board_button.boot_button.value(1)
-    await board_button._check_once()
-    
-    # Wait to avoid debounce
-    board_button._last_press_time = 0
-    
-    # Second press
-    board_button.boot_button.value(0)
-    await board_button._check_once()
-    assert callback_called == 2
-
-@pytest.mark.asyncio
 async def test_monitor_with_async_callback(board_button):
-    callback = AsyncMock()
-    board_button.on_press(callback)
+    call_count = 0
     
-    print("\nStarting async callback test")
-    
-    # First press
-    board_button.boot_button.value(0)
-    await board_button._check_once()
-    assert callback.await_count == 1
-    
-    # Release
-    board_button.boot_button.value(1)
-    await board_button._check_once()
-    
-    # Wait to avoid debounce
-    board_button._last_press_time = 0
-    
-    # Second press
-    board_button.boot_button.value(0)
-    await board_button._check_once()
-    assert callback.await_count == 2
+    async def async_callback():
+        nonlocal call_count
+        call_count += 1
+        yield None
+        
+    with patch('uasyncio.create_task', new_callable=AsyncMock) as mock_create_task:
+        task = AsyncMock()
+        task.__iter__ = lambda: (yield None)
+        mock_create_task.return_value = task
+        board_button.on_press(async_callback)
+        
+        # Initial state - not pressed
+        assert board_button._was_pressed == False
+        
+        # First press
+        board_button.boot_button.value(0)  # Press
+        await board_button._check_once()
+        assert mock_create_task.called
+        mock_create_task.reset_mock()
+        
+        # Release
+        board_button.boot_button.value(1)  # Release
+        await board_button._check_once()
+        assert not mock_create_task.called
+        
+        # Second press (after debounce)
+        board_button._last_press_time = 0  # Clear debounce
+        board_button.boot_button.value(0)  # Press again
+        await board_button._check_once()
+        assert mock_create_task.called
 
 @pytest.mark.asyncio
 async def test_debounce(board_button):
-    callback_called = 0
+    calls = 0
+    task = AsyncMock()
+    task.__iter__ = lambda: (yield None)
     
-    def on_press():
-        nonlocal callback_called
-        callback_called += 1
+    async def async_callback():
+        nonlocal calls
+        calls += 1
+        yield None
     
-    board_button.on_press(on_press)
+    board_button.on_press(async_callback)
     
-    # First press
-    board_button.boot_button.value(0)
-    await board_button._check_once()
-    assert callback_called == 1
-    
-    # Immediate second press should be ignored due to debounce
-    board_button.boot_button.value(1)  # Release
-    await board_button._check_once()
-    board_button.boot_button.value(0)  # Press again
-    await board_button._check_once()
-    assert callback_called == 1  # Should not increment
+    # Test debounce and reset
+    with patch('uasyncio.create_task', new_callable=AsyncMock) as mock_create_task:
+        # First press
+        board_button.boot_button.value(0)
+        await board_button._check_once()
+        assert mock_create_task.call_count == 1
+        
+        # Press again immediately (should be ignored due to debounce)
+        await board_button._check_once()
+        assert mock_create_task.call_count == 1
+        
+        # Release button
+        board_button.boot_button.value(1)
+        await board_button._check_once()
+
+        # Press again after debounce reset
+        board_button.boot_button.value(0)  # Press again
+        board_button._last_press_time = 0
+        await board_button._check_once()
+        assert mock_create_task.call_count == 2

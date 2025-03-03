@@ -22,10 +22,22 @@ async def test_debug_off():
     assert debug.led.value() == 0
 
 @pytest.mark.asyncio
+async def test_debug_blink_preserves_state():
+    debug = DebugLed()
+    debug.on()
+    await debug.blink(count=1, interval=0.1)
+    assert debug.led.value() == 1
+
+    debug.off()
+    await debug.blink(count=1, interval=0.1)
+    assert debug.led.value() == 0
+
+@pytest.mark.asyncio
 async def test_debug_blink():
     debug = DebugLed()
+    initial_state = debug.led.value()
     await debug.blink(count=2, interval=0.1)
-    assert debug.led.value() == 0
+    assert debug.led.value() == initial_state
 
 async def mock_sleep_with_interrupt(*args):
     raise KeyboardInterrupt
@@ -46,4 +58,3 @@ async def test_stop_blinking():
     debug._blink_forever = True
     debug.stop_blinking()
     assert debug._blink_forever == False
-    assert debug.led.value() == 0

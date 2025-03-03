@@ -13,15 +13,20 @@ async def handle_click():
 button = BoardButton(handle_click)
 
 async def main():
-    await debug.blink(5)
-    debug.on()
-    
     try:
+        await debug.blink(5)
+        debug.on()
+        
         await uasyncio.gather(
             button.monitor_buttons(),
         )
     except KeyboardInterrupt:
+        print("Keyboard interrupt received")
         button.stop()
+    except Exception as e:
+        print("Error in main:", str(e))
+        raise
 
 if __name__ == "__main__":
+    print("Initializing system...")
     uasyncio.run(main())
