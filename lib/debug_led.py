@@ -3,8 +3,8 @@ import uasyncio
 from pins import BUILTIN_LED
 
 class DebugLed:
-    def __init__(self):
-        self.led = Pin(BUILTIN_LED, Pin.OUT)
+    def __init__(self, pin=BUILTIN_LED):
+        self.led = Pin(pin, Pin.OUT)
         self._blink_forever = False
     
     async def blink(self, count=1, interval=0.5):

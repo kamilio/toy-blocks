@@ -1,22 +1,27 @@
-# main.py runs after boot.py and is meant for:
-# - Your main application code
-# - Program logic
-# - Sleep/shutdown functions
-
-import machine
 import uasyncio
 from auto_shutdown import AutoShutdown
+from board_button import BoardButton
 from debug_led import DebugLed
 
 auto_shutdown = AutoShutdown(timeout=600)
 debug = DebugLed()
 
+async def handle_click():
+    print("Button clicked!")
+    await debug.blink(3, 0.2)
+
+button = BoardButton(handle_click)
+
 async def main():
     await debug.blink(5)
     debug.on()
     
-    while True:
-        await uasyncio.sleep(0.1)
-        auto_shutdown.maybe_deepsleep()
+    try:
+        await uasyncio.gather(
+            button.monitor_buttons(),
+        )
+    except KeyboardInterrupt:
+        button.stop()
 
-uasyncio.run(main())
+if __name__ == "__main__":
+    uasyncio.run(main())
