@@ -10,6 +10,7 @@
         "**/notes/**",
         "test_*.py",
         "lib/test_*.py",
+        "devices/**",
         "./test_*.py",
         "*test_*.py",
         "conftest.py",

@@ -19,7 +19,7 @@ class AutoShutdown:
         self._running = True
         while self._running:
             await self.maybe_deepsleep()
-            await uasyncio.sleep(1)
+            await uasyncio.sleep(10)
 
     def stop(self):
         self._running = False

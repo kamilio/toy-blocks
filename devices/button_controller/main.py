@@ -2,9 +2,11 @@ import uasyncio
 from auto_shutdown import AutoShutdown
 from board_button import BoardButton
 from debug_led import DebugLed
+from wifi import WiFi
 
-auto_shutdown = AutoShutdown(timeout=600)
+auto_shutdown = AutoShutdown(timeout=60) # 600 seconds = 10 minutes
 debug = DebugLed()
+wifi = WiFi()
 
 async def handle_click():
     print("Button clicked!")
@@ -19,6 +21,8 @@ async def main():
         
         await uasyncio.gather(
             button.monitor_buttons(),
+            auto_shutdown.monitor(),
+            wifi.connect_with_delay(delay=5), # seconds
         )
     except KeyboardInterrupt:
         print("Keyboard interrupt received")

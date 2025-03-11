@@ -174,3 +174,8 @@ bin/
 
 # WiFi credentials
 lib/wifi_config.py
+
+# Switching of files
+pymakr.conf
+main.py
+boot.py

@@ -7,9 +7,17 @@
 pip install esptool
 ```
 
-## Download MicroPython
+## Download MicroPython Firmware
 
-Download the latest ESP32 firmware from the [MicroPython downloads page](`https://micropython.org/download/esp32/`).
+Each board type requires its specific firmware:
+
+### ESP32-WROOM
+Download from [MicroPython ESP32 downloads](https://micropython.org/download/esp32/)
+- Save as `bin/ESP32_GENERIC-20241129-v1.24.1.bin`
+
+### ESP32-C3 SuperMini
+Download from [MicroPython ESP32-C3 downloads](https://micropython.org/download/esp32c3/)
+- Save as `bin/ESP32_C3_GENERIC-20240105-v1.22.1.bin`
 
 ## Connect the ESP32
 
@@ -17,11 +25,39 @@ Download the latest ESP32 firmware from the [MicroPython downloads page](`https:
 
 ```bash
 ls /dev/tty.* 
-# Look for something like /dev/tty.usbserial-0001
+# Look for:
+# ESP32-WROOM: /dev/tty.usbserial-0001
+# ESP32-C3 SuperMini: /dev/tty.usbmodem1101
 ```
 
 ## Flash
 
+For ESP32-WROOM (default):
+```bash
+./scripts/flash_esp32_micropython.py --board esp32
 ```
-./script/flash_esp32.py
+
+For ESP32-C3 SuperMini:
+```bash
+./scripts/flash_esp32_micropython.py --board esp32-c3
 ```
+
+You can override the default port if needed:
+```bash
+./scripts/flash_esp32_micropython.py --board esp32 --port /dev/tty.usbserial-XXXX
+```
+
+Custom firmware path:
+```bash
+./scripts/flash_esp32_micropython.py --board esp32 --firmware path/to/firmware.bin
+```
+
+## Directory Structure
+
+```
+toy-blocks/
+├── bin/
+│   ├── ESP32_GENERIC-20241129-v1.24.1.bin     # For ESP32-WROOM
+│   └── ESP32_C3_GENERIC-20240105-v1.22.1.bin  # For ESP32-C3
+└── scripts/
+    └── flash_esp32_micropython.py

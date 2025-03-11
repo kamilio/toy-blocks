@@ -1,11 +1,12 @@
 from machine import Pin
 import uasyncio
 import time
-from pins import BOOT_BUTTON
+from board_config import BoardConfig
 
 class BoardButton:
     def __init__(self, callback=None):
-        self.boot_button = Pin(BOOT_BUTTON, Pin.IN, Pin.PULL_UP)
+        self.config = BoardConfig()
+        self.boot_button = self.config.get_pin(self.config.BOOT_BUTTON, Pin.IN, Pin.PULL_UP)
         self._running = False
         self.on_press(callback) if callback else None
         self._debounce_delay = 0.05

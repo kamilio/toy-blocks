@@ -2,3 +2,5 @@
 # - Setting up WiFi
 # - Configuring hardware interfaces
 # - Setting system parameters
+
+print("Booting...")
