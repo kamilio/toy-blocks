@@ -1,6 +1,4 @@
-from enum import IntEnum
-
-class Note(IntEnum):
+class Note:
     REST = 0
     C4 = 262
     CS4 = 277
@@ -16,10 +14,43 @@ class Note(IntEnum):
     B4 = 494
     C5 = 523
 
-class Duration(IntEnum):
+    def __init__(self, value):
+        self.value = value
+
+    def __int__(self):
+        return self.value
+    
+    def __eq__(self, other):
+        if isinstance(other, int):
+            return self.value == other
+        return self.value == other.value
+    
+    @classmethod
+    def from_int(cls, value):
+        return cls(value)
+
+class Duration:
     WHOLE = 1000
     HALF = 500
     QUARTER = 250
     EIGHTH = 125
     SIXTEENTH = 63
     THIRTYSECOND = 31
+
+    def __init__(self, value):
+        self.value = value
+
+    def __int__(self):
+        return self.value
+
+    def __truediv__(self, other):
+        return int(self) / other
+    
+    def __eq__(self, other):
+        if isinstance(other, int):
+            return self.value == other
+        return self.value == other.value
+    
+    @classmethod
+    def from_int(cls, value):
+        return cls(value)

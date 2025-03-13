@@ -3,12 +3,12 @@ import os
 import wave
 import math
 import struct
-from time import sleep
+import asyncio
 import tempfile
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lib.speaker_types import Note, Duration
-from lib.songs import COME_AS_YOU_ARE
+from lib.songs import smoke_on_the_water
 
 class LaptopSpeaker:
     def __init__(self):
@@ -20,7 +20,7 @@ class LaptopSpeaker:
         num_samples = int((duration_ms / 1000.0) * self.sample_rate)
         audio_data = []
         for i in range(num_samples):
-            sample = math.sin(2 * math.pi * freq * i / self.sample_rate)
+            sample = math.sin(2 * math.pi * int(freq) * i / self.sample_rate)
             audio_data.append(int(sample * 32767))
             
         with wave.open(self.tone_file, 'w') as wav_file:
@@ -29,22 +29,25 @@ class LaptopSpeaker:
             wav_file.setframerate(self.sample_rate)
             wav_file.writeframes(struct.pack('h' * len(audio_data), *audio_data))
     
-    def play_note(self, note: Note, duration: Duration) -> None:
+    async def play_note(self, note, duration) -> None:
+        if not isinstance(note, Note):
+            note = Note.from_int(note)
+        if not isinstance(duration, Duration):
+            duration = Duration.from_int(duration)
         if note != Note.REST:
             self._generate_sine_wave(note, 100)  # Generate a short tone
-            os.system(f'afplay {self.tone_file}')
-        sleep(duration / 1000)
+            os.system(f"afplay {self.tone_file}")
+        await asyncio.sleep(duration / 1000)
     
-    def play_song(self, song: list[tuple[Note, Duration]]) -> None:
+    async def play_song(self, song):
         for note, duration in song:
-            self.play_note(note, duration)
+            await self.play_note(note, duration)
             if note != Note.REST:
-                sleep(0.05)  # Small gap between notes
+                await asyncio.sleep(0.05)
 
-def main():
+async def main():
     speaker = LaptopSpeaker()
-    print("Playing 'Come As You Are' by Nirvana...")
-    speaker.play_song(COME_AS_YOU_ARE)
+    await speaker.play_song(smoke_on_the_water)
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
