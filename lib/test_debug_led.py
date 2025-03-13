@@ -77,32 +77,29 @@ async def test_stop_blinking():
     debug.stop_blinking()
     assert debug._blink_forever == False
 
-class MockPinWithHistory:
-    OUT = "out"
-    def __init__(self, id, mode):
-        self.id = id
-        self.mode = mode
-        self._value = 0
-        self.history = []
-
-    def value(self, val=None):
-        if val is not None:
-            self._value = val
-            self.history.append(val)
-        return self._value
-
-@pytest.fixture
-def mock_pin_with_history(monkeypatch):
-    pins = {}
-    def mock_Pin(pin, mode):
-        pins[pin] = MockPinWithHistory(pin, mode)
-        return pins[pin]
-    monkeypatch.setattr('machine.Pin', mock_Pin)
-    return lambda pin: pins[pin]
-
 @pytest.mark.asyncio
-async def test_debug_blink_three_times_active_low(mock_pin_with_history):
+async def test_debug_blink_three_times_active_low(mock_pin):
+    print("\nStarting blink test...")
     pin = 2
-    debug = DebugLed(pin=pin, active_low=True)
-    await debug.blink(count=3, interval=0.1)
-    assert len(mock_pin_with_history(pin).history) == 7  # 3 on-off cycles plus final state restore
+    mock_pin = mock_pin(pin)  # Get pin instance before creating DebugLed
+    print(f"Initial pin state - value: {mock_pin.value()}, history: {mock_pin.history}")
+    
+    led = DebugLed(pin=pin, active_low=True)
+    print(f"Created DebugLed with pin={pin}, active_low=True")
+    
+    # Mock sleep to be synchronous
+    async def mock_sleep(t):
+        print(f"Sleep called, current pin value: {mock_pin.value()}, history: {mock_pin.history}")
+        return
+
+    with patch('uasyncio.sleep', mock_sleep):
+        await led.blink(count=3, interval=0.1)
+        
+    print(f"Final pin value: {mock_pin.value()}")
+    print(f"Final pin history: {mock_pin.history}")
+    # Look for 3 on-off cycles plus final state restore:
+    # 1. Initial on, off
+    # 2. Second on, off
+    # 3. Third on, off
+    # 4. Final state restore
+    assert len(mock_pin.history) == 7

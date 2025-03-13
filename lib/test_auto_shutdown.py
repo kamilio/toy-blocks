@@ -7,8 +7,10 @@ import uasyncio
 @pytest.mark.asyncio
 async def test_init():
     """Test initialization sets correct timeout"""
-    auto = AutoShutdown(timeout=60)
-    assert auto.timeout == 60
+    with patch('auto_shutdown.time', return_value=100):
+        auto = AutoShutdown(timeout=60)
+        assert auto.timeout == 60
+        assert auto.start_time == 100
     assert auto.start_time > 0
 
 @pytest.mark.asyncio
