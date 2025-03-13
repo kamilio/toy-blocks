@@ -32,7 +32,7 @@ class PWMWrapper:
 class Speaker:
     def __init__(self, pin: int, freq=440):
         self.pwm = PWMWrapper(Pin(pin, Pin.OUT), freq)
-        self.logger = Logger("Speaker", debug=True)
+        self.logger = Logger("Speaker", debug=False)
     
     def _turn_on(self):
         self.pwm.duty_u16 = 32768  # 50% duty cycle
@@ -62,12 +62,13 @@ class Speaker:
             self.pwm.freq = int(note)
             self._turn_on()
             
-        await uasyncio.sleep(int(duration) / 1000)  # Convert ms to seconds
+        # Convert duration to float after getting the integer value
+        await uasyncio.sleep(float(int(duration)) / 1000)  # Convert ms to seconds
         self._turn_off()
     
     async def play_song(self, song):
         self.logger.info("Starting to play song")
         for note, duration in song:
             await self.play_note(note, duration)
-            if note != Note.REST:
-                await uasyncio.sleep(0.05)  # Small gap between notes
+            # Always add a small gap between notes for consistent rhythm
+            await uasyncio.sleep(0.05)  # Small gap between notes
