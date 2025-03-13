@@ -22,20 +22,6 @@ def create_device(device_type):
     # Create device-specific pymakr overrides
     pymakr_conf = {
         "name": device_type,
-        "address": "/dev/ttyUSB0",
-        "upload_chunks": 128,
-        "sync_file_types": ["py"],
-        "sync_all_file_types": False,
-        "sync_folder": "../../",
-        "open_on_start": True,
-        "safe_boot_on_upload": False,
-        "py_ignore": [
-            "**/*",
-            "!lib/*.py",
-            f"!devices/{device_type}/main.py",
-            "**/test_*.py"
-        ],
-        "fast_upload": False
     }
     
     with open(device_dir / "pymakr_overrides.conf", "w") as f:

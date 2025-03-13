@@ -1,5 +1,18 @@
 import sys
 from unittest.mock import MagicMock
+import pytest
+import asyncio
+
+# Mock system time
+_current_time = 0
+
+def mock_current_time():
+    global _current_time
+    return _current_time
+
+def advance_time(seconds):
+    global _current_time
+    _current_time += seconds
 
 # Mock micropython.const
 def mock_const(value):
@@ -9,22 +22,64 @@ mock_micropython = MagicMock()
 mock_micropython.const = mock_const
 sys.modules['micropython'] = mock_micropython
 
+# Mock machine module's Pin
 class MockPin:
-    IN = 1
-    OUT = 2
-    PULL_UP = 3
-    PULL_DOWN = 4
+    IN = "in"
+    OUT = "out"
+    PULL_UP = "pull_up"
+    PULL_DOWN = "pull_down"
     
-    def __init__(self, pin, mode=-1, pull=-1):
-        self.pin = pin
+    _instances = {}
+
+    def __new__(cls, id, mode=OUT, pull=None):
+        existing_instance = cls._instances.get(id)
+        if existing_instance is not None:
+            return existing_instance
+        return super().__new__(cls)
+    
+    def __init__(self, id, mode=OUT, pull=None):
+        self.id = id
         self.mode = mode
         self._value = 0
+        self.history = []
+        print(f"Created MockPin {id} with mode {mode}")
 
     def value(self, val=None):
         if val is not None:
+            val = int(bool(val))  # Convert to 0 or 1
+            prev_value = self._value
             self._value = val
+            if val != prev_value:  # Only add to history if value actually changed
+                print(f"Pin {self.id} value changed from {prev_value} to {val}")
+                self.history.append(val)
+                print(f"History updated: {self.history}")
+            else:
+                print(f"Pin {self.id} value unchanged at {val}")
         return self._value
     
+    @classmethod
+    def clear_instances(cls):
+        print("Clearing all pin instances")
+        cls._instances.clear()
+    
+    @classmethod
+    def get_instance(cls, id, mode=None, pull=None):
+        if id not in cls._instances:
+            cls._instances[id] = cls(id, mode or cls.OUT, pull)
+            print(f"Created new pin instance for id {id}")
+        else:
+            print(f"Reusing existing pin instance for id {id}")
+            if mode is not None:
+                cls._instances[id].mode = mode
+            if pull is not None:
+                cls._instances[id].pull = pull
+        return cls._instances[id]
+    
+@pytest.fixture(scope='function', autouse=True)
+def mock_pin():
+    MockPin.clear_instances()
+    return lambda id: MockPin.get_instance(id)
+
 # Mock machine module's RTC
 class MockRTC:
     def __init__(self):
@@ -121,10 +176,25 @@ mock_urequests = MagicMock()
 mock_urequests.get = mock_get
 sys.modules['urequests'] = mock_urequests
 
-# Mock uasyncio module
-async def mock_sleep(*args):
-    pass
+# Mock uasyncio module with better coroutine handling
+async def mock_sleep(delay):
+    advance_time(delay)
+
+async def mock_create_task(coro):
+    return await coro
 
 mock_uasyncio = MagicMock()
 mock_uasyncio.sleep = mock_sleep
+mock_uasyncio.create_task = mock_create_task
 sys.modules['uasyncio'] = mock_uasyncio
+
+# Mock time module
+mock_time = MagicMock()
+mock_time.time = mock_current_time
+sys.modules['time'] = mock_time
+
+# Reset time before each test
+@pytest.fixture(autouse=True)
+def reset_time():
+    global _current_time
+    _current_time = 0

@@ -47,7 +47,7 @@ def switch_device(device_type: str, project_root: Optional[Path] = None):
     
     # Handle boot.py symlink
     device_boot = device_dir / "boot.py"
-    template_boot = project_root / "templates" / "boot.py"
+    template_boot = project_root / "templates" / "boot.py.template"
     if device_boot.exists():
         create_symlink(device_boot, project_root / "boot.py")
     elif template_boot.exists():
@@ -59,7 +59,7 @@ def switch_device(device_type: str, project_root: Optional[Path] = None):
     print(f"""
 Switched to device: {device_type}
   - Symlinked main.py
-  - {'Symlinked device-specific boot.py' if device_boot.exists() else 'Symlinked template boot.py' if template_boot.exists() else 'No boot.py found'}
+  - {'Symlinked device-specific boot.py' if device_boot.exists() else 'Default boot.py' if template_boot.exists() else 'No boot.py found'}
   - Created merged pymakr.conf
 """)
 

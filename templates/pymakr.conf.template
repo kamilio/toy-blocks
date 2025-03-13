@@ -11,6 +11,7 @@
         "test_*.py",
         "lib/test_*.py",
         "devices/**",
+        "scripts/**",
         "./test_*.py",
         "*test_*.py",
         "conftest.py",
