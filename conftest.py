@@ -2,6 +2,10 @@ import sys
 from unittest.mock import MagicMock
 import pytest
 import asyncio
+import os
+
+# Add lib directory to Python path
+sys.path.append(os.path.join(os.path.dirname(__file__), 'lib'))
 
 # Mock system time
 _current_time = 0
@@ -198,3 +202,62 @@ sys.modules['time'] = mock_time
 def reset_time():
     global _current_time
     _current_time = 0
+
+# Mock LED classes for testing
+class MockLed:
+    def __init__(self, pin, active_low=False):
+        if isinstance(pin, int):
+            self.pin = MockPin(pin)
+        else:
+            self.pin = pin
+        self.active_low = active_low
+        self.off()
+
+    def value(self, val=None):
+        if val is not None:
+            self.pin.value(val)
+        return self.pin.value()
+        
+    def on(self):
+        self.value(1 if not self.active_low else 0)
+        
+    def off(self):
+        self.value(0 if not self.active_low else 1)
+        
+    def toggle(self):
+        self.value(not self.value())
+
+class MockShiftRegister:
+    def __init__(self):
+        self.state = bytearray([0])
+        self.pins = {}
+
+    def set_pin(self, position, value):
+        if not 0 <= position < 8:
+            raise ValueError("Position must be between 0 and 7")
+        if value:
+            self.state[0] |= (1 << (7 - position))
+        else:
+            self.state[0] &= ~(1 << (7 - position))
+        self.pins[position] = value
+
+class MockShiftRegisterLed:
+    def __init__(self, shift_register, position, active_low=False):
+        self.shift_register = shift_register
+        self.position = position
+        self.active_low = active_low
+        self.off()
+
+    def on(self):
+        self.shift_register.set_pin(self.position, not self.active_low)
+
+    def off(self):
+        self.shift_register.set_pin(self.position, self.active_low)
+
+    def toggle(self):
+        current = (self.shift_register.state[0] >> (7 - self.position)) & 1
+        self.shift_register.set_pin(self.position, not current)
+
+@pytest.fixture
+def mock_shift_register():
+    return MockShiftRegister()
