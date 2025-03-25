@@ -42,11 +42,14 @@ class MockPin:
         return super().__new__(cls)
     
     def __init__(self, id, mode=OUT, pull=None):
-        self.id = id
-        self.mode = mode
-        self._value = 0
-        self.history = []
-        print(f"Created MockPin {id} with mode {mode}")
+        if id not in self._instances:
+            self.id = id
+            self.mode = mode
+            self._value = 0
+            self.led = self  # Make pin act as its own LED for test compatibility
+            self.history = []
+            print(f"Created MockPin {id} with mode {mode}")
+            self._instances[id] = self
 
     def value(self, val=None):
         if val is not None:
@@ -61,28 +64,24 @@ class MockPin:
                 print(f"Pin {self.id} value unchanged at {val}")
         return self._value
     
+    def on(self):
+        self.value(1)
+        
+    def off(self):
+        self.value(0)
+        
+    def toggle(self):
+        self.value(not self.value())
+    
     @classmethod
     def clear_instances(cls):
         print("Clearing all pin instances")
         cls._instances.clear()
-    
-    @classmethod
-    def get_instance(cls, id, mode=None, pull=None):
-        if id not in cls._instances:
-            cls._instances[id] = cls(id, mode or cls.OUT, pull)
-            print(f"Created new pin instance for id {id}")
-        else:
-            print(f"Reusing existing pin instance for id {id}")
-            if mode is not None:
-                cls._instances[id].mode = mode
-            if pull is not None:
-                cls._instances[id].pull = pull
-        return cls._instances[id]
-    
+
 @pytest.fixture(scope='function', autouse=True)
 def mock_pin():
     MockPin.clear_instances()
-    return lambda id: MockPin.get_instance(id)
+    return MockPin
 
 # Mock machine module's RTC
 class MockRTC:
@@ -203,60 +202,53 @@ def reset_time():
     global _current_time
     _current_time = 0
 
-# Mock LED classes for testing
-class MockLed:
-    def __init__(self, pin, active_low=False):
-        if isinstance(pin, int):
-            self.pin = MockPin(pin)
-        else:
-            self.pin = pin
-        self.active_low = active_low
-        self.off()
-
-    def value(self, val=None):
-        if val is not None:
-            self.pin.value(val)
-        return self.pin.value()
-        
-    def on(self):
-        self.value(1 if not self.active_low else 0)
-        
-    def off(self):
-        self.value(0 if not self.active_low else 1)
-        
-    def toggle(self):
-        self.value(not self.value())
-
+# Mock shift register implementation
 class MockShiftRegister:
     def __init__(self):
-        self.state = bytearray([0])
+        self.state = bytearray([0xFF])  # Initialize with 0xFF like the real implementation
         self.pins = {}
+        self._in_batch = False
+
+    def begin_batch(self):
+        self._in_batch = True
+
+    def end_batch(self):
+        self._in_batch = False
 
     def set_pin(self, position, value):
         if not 0 <= position < 8:
             raise ValueError("Position must be between 0 and 7")
         if value:
-            self.state[0] |= (1 << (7 - position))
+            self.state[0] |= (1 << position)
         else:
-            self.state[0] &= ~(1 << (7 - position))
+            self.state[0] &= ~(1 << position)
         self.pins[position] = value
 
-class MockShiftRegisterLed:
-    def __init__(self, shift_register, position, active_low=False):
+class ShiftRegisterLed:
+    def __init__(self, shift_register, position, active_low=True):  # Default to active_low=True like real implementation
         self.shift_register = shift_register
         self.position = position
         self.active_low = active_low
         self.off()
 
+    def value(self, val=None):
+        if val is not None:
+            self._set_value(val)
+        return self.shift_register.pins.get(self.position, 0)
+
     def on(self):
-        self.shift_register.set_pin(self.position, not self.active_low)
+        self._set_value(True)
 
     def off(self):
-        self.shift_register.set_pin(self.position, self.active_low)
+        self._set_value(False)
 
     def toggle(self):
-        current = (self.shift_register.state[0] >> (7 - self.position)) & 1
-        self.shift_register.set_pin(self.position, not current)
+        current = self.value()
+        self._set_value(not current)
+
+    def _set_value(self, value):
+        actual_value = not value if self.active_low else value
+        self.shift_register.set_pin(self.position, actual_value)
 
 @pytest.fixture
 def mock_shift_register():
