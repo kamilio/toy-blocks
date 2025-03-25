@@ -3,36 +3,15 @@ import machine
 from logger import Logger
 
 class BoardConfig:
-    def __init__(self):
+    def __init__(self, detected_board="ESP32"):
         self.logger = Logger("BoardConfig", debug=True)
         self.logger.info("Initializing board configuration...")
-        self._detected_board = self._detect_board()
+        self._detected_board = detected_board
         self._configure_pins()
 
     @property
     def detected_board(self):
         return self._detected_board
-
-    def _detect_board(self):
-        try:
-            chip_id = machine.unique_id()
-            freq = machine.freq()
-            
-            # Handle both real and mock scenarios safely
-            chip_id_str = ""
-            try:
-                chip_id_str = ':'.join('%02x' % b for b in chip_id)
-            except:
-                chip_id_str = str(chip_id)
-                
-            self.logger.info(f"Detecting board - Chip ID: {chip_id_str}, Frequency: {freq}Hz")
-            
-            # Force ESP32 detection since we know it's an ESP32
-            self.logger.info("Detected ESP32 board")
-            return "ESP32"
-        except Exception as e:
-            self.logger.info(f"Detection failed: {str(e)}, defaulting to ESP32 board")
-            return "ESP32"
 
     def _configure_pins(self):
         self.logger.info(f"Configuring pins for {self._detected_board}")
@@ -90,6 +69,17 @@ class BoardConfig:
         return 5
 
     @property
+    def shift_register_pins(self):
+        if self._detected_board == "ESP32-C3":
+            raise NotImplementedError("Shift register not available on ESP32-C3")
+        
+        return {
+            'ser': 32,   # Serial data
+            'rclk': 33,  # Register clock
+            'srclk': 26  # Shift register clock
+        }
+    
+    @property
     def led_matrix_pins(self):
         if self._detected_board == "ESP32-C3":
             raise NotImplementedError("LED matrix not available on ESP32-C3")
@@ -97,10 +87,19 @@ class BoardConfig:
         return [
             [32, 33, 26, 27, 25]
         ]
+
+    @property
+    def dice_pins(self):
+        if self._detected_board == "ESP32-C3":
+            return [5, 4, 1, 6, 3, 7, 2]
+        
+        # Return 7 pins for the dice display 
+        # Using available GPIO pins that don't conflict with other functionalities
+        return [12, 13, 14, 15, 16, 17, 18]
     
     @property
     def custom_button_pin(self):
         if self._detected_board == "ESP32-C3":
             raise NotImplementedError("Custom button pin not available on ESP32-C3")
         
-        return 34
+        return 5

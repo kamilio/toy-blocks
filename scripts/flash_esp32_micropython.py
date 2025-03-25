@@ -19,7 +19,7 @@ BOARDS = {
     "esp32-c3": {
         "name": "ESP32-C3 SuperMini",
         "chip": "esp32c3",
-        "port": "/dev/tty.usbmodem1101",
+        "port": "/dev/tty.usbmodem101",
         "baud": "460800",
         "flash_mode": "dio",
         "flash_addr": "0x0",

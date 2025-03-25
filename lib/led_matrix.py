@@ -1,20 +1,49 @@
-from machine import Pin, Timer
+from machine import Pin
 from lib.led import Led
-import time
+from lib.shift_register import ShiftRegisterLed
+import uasyncio
 
 class LedMatrix:
-    def __init__(self, pin_matrix, active_low=False):
+    ANIMATION_STATES = ['blink', 'left-to-right', 'sequential', 'ping-pong', 'binary']
+    def __init__(self, pin_matrix, active_high=True, current_animation='left-to-right'):
+        
         self.rows = len(pin_matrix)
         self.cols = len(pin_matrix[0])
+        self._running = False
         self.matrix = []
-        self.animation_timer = None
-        self.animation_delay = 500
+        self.animation_delay = 300  # Increased from 100ms to 300ms for more visible blink pattern
+        self.is_powered = True
+        
+        # Validate and set the animation
+        if current_animation not in self.ANIMATION_STATES:
+            print(f"Warning: Invalid animation '{current_animation}'. Using default 'blink'.")
+            self.current_animation = 'blink'
+        else:
+            self.current_animation = current_animation
+            
+        print(f"Initializing with animation: {self.current_animation}")
         
         for row in pin_matrix:
             led_row = []
             for pin in row:
-                led_row.append(Led(pin, active_low))
+                if hasattr(pin, 'on') and hasattr(pin, 'off') and hasattr(pin, 'toggle'):
+                    # Pin already has LED-like interface, use it directly
+                    led_row.append(pin)
+                elif isinstance(pin, tuple) and len(pin) == 2:
+                    # Pin is a tuple with (shift_register, position)
+                    shift_register, position = pin
+                    if hasattr(shift_register, 'set_pin'):
+                        # Pass the active_low parameter that could override the shift register's default
+                        # active_low is the inverse of active_high
+                        led_row.append(ShiftRegisterLed(shift_register, position, active_low=not active_high))
+                    else:
+                        raise ValueError(f"Invalid shift register pin: {pin}")
+                else:
+                    # No longer accepting raw pin numbers
+                    raise ValueError(f"Invalid pin type: {pin}. Must provide either an LED object with on/off/toggle methods or a (shift_register, position) tuple.")
             self.matrix.append(led_row)
+        
+        self.fill()
     
     def set_pixel(self, row, col, value):
         if 0 <= row < self.rows and 0 <= col < self.cols:
@@ -23,15 +52,78 @@ class LedMatrix:
             else:
                 self.matrix[row][col].off()
     
-    def clear(self):
+    def _set_leds_synced(self, led_states):
+        """
+        Set multiple LEDs at once with proper synchronization between
+        shift register LEDs and direct LEDs.
+        
+        Args:
+            led_states: List of tuples in the format [(led, state), ...] where
+                        state is True for on and False for off
+        """
+        # Organize LEDs into shift register LEDs and direct LEDs
+        shift_registers = set()
+        sr_led_states = []
+        direct_led_states = []
+        
+        for led, state in led_states:
+            if hasattr(led, 'shift_register'):
+                shift_registers.add(led.shift_register)
+                sr_led_states.append((led, state))
+            else:
+                direct_led_states.append((led, state))
+        
+        # Begin batch mode on all shift registers
+        for sr in shift_registers:
+            sr.begin_batch()
+            
+        # First update all shift register LEDs
+        for led, state in sr_led_states:
+            if state:
+                led.on()
+            else:
+                led.off()
+                
+        # End batch mode on all shift registers
+        for sr in shift_registers:
+            sr.end_batch()
+            
+        # Now update all direct pin LEDs after shift registers have updated
+        for led, state in direct_led_states:
+            if state:
+                led.on()
+            else:
+                led.off()
+    
+    def _set_matrix_pattern(self, pattern_func):
+        """
+        Set a pattern across the entire matrix. The pattern_func will be called
+        for each LED position to determine if it should be on or off.
+        
+        Args:
+            pattern_func: Function that takes (row, col) and returns True (on) or False (off)
+        """
+        # Build a list of all LEDs and their desired states
+        led_states = []
+        
         for row in range(self.rows):
             for col in range(self.cols):
-                self.matrix[row][col].off()
+                led = self.matrix[row][col]
+                state = pattern_func(row, col)
+                led_states.append((led, state))
+                
+        # Set all LEDs with proper synchronization
+        self._set_leds_synced(led_states)
+    
+    def clear(self):
+        """Turn off all LEDs in the matrix"""
+        # Simply use _set_matrix_pattern with a function that always returns False
+        self._set_matrix_pattern(lambda row, col: False)
     
     def fill(self):
-        for row in range(self.rows):
-            for col in range(self.cols):
-                self.matrix[row][col].on()
+        """Turn on all LEDs in the matrix"""
+        # Simply use _set_matrix_pattern with a function that always returns True
+        self._set_matrix_pattern(lambda row, col: True)
     
     def toggle_pixel(self, row, col):
         if 0 <= row < self.rows and 0 <= col < self.cols:
@@ -39,51 +131,236 @@ class LedMatrix:
     
     def set_row(self, row, values):
         if 0 <= row < self.rows and len(values) == self.cols:
+            # Create a list of LEDs and their states
+            led_states = []
             for col, value in enumerate(values):
-                self.set_pixel(row, col, value)
+                led = self.matrix[row][col]
+                led_states.append((led, value))
+            
+            # Update all LEDs in the row synchronously
+            self._set_leds_synced(led_states)
     
     def set_column(self, col, values):
         if 0 <= col < self.cols and len(values) == self.rows:
+            # Create a list of LEDs and their states
+            led_states = []
             for row, value in enumerate(values):
-                self.set_pixel(row, col, value)
-    
-    def _stop_current_animation(self):
-        if self.animation_timer:
-            self.animation_timer.deinit()
-            self.animation_timer = None
+                led = self.matrix[row][col]
+                led_states.append((led, value))
             
+            # Update all LEDs in the column synchronously
+            self._set_leds_synced(led_states)
+    
     def set_animation_delay(self, ms):
         self.animation_delay = ms
         
     def stop_animation(self):
-        self._stop_current_animation()
-        self.clear()
+        self._running = False
         
     def animate_left_to_right(self):
-        self._stop_current_animation()
         current_col = 0
         
-        def animation_step(timer):
+        async def animation_step():
             nonlocal current_col
-            self.clear()
-            for row in range(self.rows):
-                self.set_pixel(row, current_col, True)
-            current_col = (current_col + 1) % self.cols
             
-        self.animation_timer = Timer(-1)
-        self.animation_timer.init(period=self.animation_delay, mode=Timer.PERIODIC, callback=animation_step)
+            # Define a pattern function that only lights up LEDs in the current column
+            def pattern(row, col):
+                return col == current_col
+                
+            # Apply the pattern to the entire matrix
+            self._set_matrix_pattern(pattern)
+                
+            # Move to the next column
+            current_col = (current_col + 1) % self.cols
+            await uasyncio.sleep(self.animation_delay/1000)
+            
+        return animation_step
         
     def animate_blink_all(self):
-        self._stop_current_animation()
+        """
+        Simple blink animation: all LEDs turn on and off together.
+        """
         state = False
         
-        def animation_step(timer):
+        async def animation_step():
             nonlocal state
+            print(f"Blink animation: {'OFF' if state else 'ON'}")
             if state:
+                # Turn all LEDs off
                 self.clear()
             else:
+                # Turn all LEDs on
                 self.fill()
             state = not state
+            await uasyncio.sleep(self.animation_delay/1000)
             
-        self.animation_timer = Timer(-1)
-        self.animation_timer.init(period=self.animation_delay, mode=Timer.PERIODIC, callback=animation_step)
+        return animation_step
+        
+    def animate_sequential(self):
+        """
+        Light up one LED at a time in sequence, moving through the entire matrix
+        row by row, from left to right.
+        """
+        current_row = 0
+        current_col = 0
+        
+        async def animation_step():
+            nonlocal current_row, current_col
+            
+            # Define a pattern function that only lights up the current LED
+            def pattern(row, col):
+                return row == current_row and col == current_col
+                
+            # Apply the pattern to the entire matrix
+            self._set_matrix_pattern(pattern)
+            
+            # Move to the next position
+            current_col += 1
+            if current_col >= self.cols:
+                current_col = 0
+                current_row += 1
+                if current_row >= self.rows:
+                    current_row = 0
+            
+            await uasyncio.sleep(self.animation_delay/1000)
+                    
+        return animation_step
+        
+    def animate_ping_pong(self):
+        """
+        Move a dot back and forth across the matrix.
+        Uses all rows by creating a cascading effect.
+        """
+        current_col = 0
+        direction = 1  # 1 for right, -1 for left
+        
+        async def animation_step():
+            nonlocal current_col, direction
+            
+            # Define a pattern function that creates the cascading effect
+            def pattern(row, col):
+                pos = (current_col + row) % self.cols
+                return col == pos
+                
+            # Apply the pattern to the entire matrix
+            self._set_matrix_pattern(pattern)
+            
+            # Change direction when reaching the edge
+            if current_col >= self.cols - 1:
+                direction = -1
+            elif current_col <= 0:
+                direction = 1
+                
+            current_col += direction
+            await uasyncio.sleep(self.animation_delay/1000)
+            
+        return animation_step
+        
+    def animate_binary_counter(self):
+        """
+        Display binary numbers on the matrix.
+        Each column represents a bit, and each row can display a different number.
+        """
+        current_number = 0
+        
+        async def animation_step():
+            nonlocal current_number
+            
+            # Define a pattern function that creates binary counting patterns
+            def pattern(row, col):
+                # Each row shows a different number in sequence
+                row_number = (current_number + row) % (2 ** self.cols)
+                binary = '{:0{}b}'.format(row_number, self.cols)
+                
+                # Check if this position should be on based on binary representation
+                if col < len(binary):
+                    # Align binary pattern to the right
+                    col_pos = self.cols - len(binary) + col
+                    if col_pos >= 0:
+                        return binary[col] == '1'
+                return False
+            
+            # Apply the pattern to the entire matrix
+            self._set_matrix_pattern(pattern)
+            
+            current_number = (current_number + 1) % (2 ** self.cols)
+            await uasyncio.sleep(self.animation_delay/1000)
+            
+        return animation_step
+        
+    def toggle_power(self):
+        self.is_powered = not self.is_powered
+        print(f"Power toggled: {'on' if self.is_powered else 'off'}")
+        
+        if not self.is_powered:
+            self.stop_animation()
+            self.clear()
+        else:
+            self.cycle_animation()
+            
+    def cycle_animation(self):
+        if not self.is_powered:
+            return
+        
+        # Make sure we're finding the correct index in ANIMATION_STATES
+        try:
+            current_idx = self.ANIMATION_STATES.index(self.current_animation)
+        except ValueError:
+            # In case of any issue, restart with blink
+            print(f"Warning: Animation '{self.current_animation}' not in ANIMATION_STATES. Resetting to 'blink'.")
+            self.current_animation = 'blink'
+            current_idx = self.ANIMATION_STATES.index('blink')
+            
+        # Move to the next animation in the sequence
+        self.current_animation = self.ANIMATION_STATES[(current_idx + 1) % len(self.ANIMATION_STATES)]
+        print(f"Animation changed to: {self.current_animation}")
+        
+        # Stop current animation and set up the new one
+        self.stop_animation()
+        
+        # Set the appropriate animation function
+        self._set_animation_function()
+        self._running = True
+        
+    def _set_animation_function(self):
+        """Helper method to set the correct animation function based on current_animation"""
+        if self.current_animation == 'blink':
+            self._animation_step = self.animate_blink_all()
+        elif self.current_animation == 'left-to-right':
+            self._animation_step = self.animate_left_to_right()
+        elif self.current_animation == 'sequential':
+            self._animation_step = self.animate_sequential()
+        elif self.current_animation == 'ping-pong':
+            self._animation_step = self.animate_ping_pong()
+        elif self.current_animation == 'binary':
+            self._animation_step = self.animate_binary_counter()
+        else:
+            # Default to blink if animation not recognized
+            print(f"Warning: Unknown animation '{self.current_animation}'. Using 'blink'.")
+            self.current_animation = 'blink'
+            self._animation_step = self.animate_blink_all()
+            
+    async def monitor(self):
+        """
+        Start the animation monitoring loop using the current animation setting.
+        """
+        self._running = True
+        
+        # Start with the currently selected animation
+        print(f"Starting monitor with animation: {self.current_animation}")
+        
+        # Use our helper function to set up the animation
+        self._set_animation_function()
+        
+        while self._running:
+            try: 
+                if self.is_powered:
+                    await self._animation_step()
+                else:
+                    await uasyncio.sleep(0.1)
+                await uasyncio.sleep(0)  # Allow other tasks to run
+            except Exception as e:
+                print(f"Animation error: {e}")
+                break
+            
+        self._running = False
