@@ -3,8 +3,9 @@ from lib.led import Led
 from lib.shift_register import ShiftRegisterLed
 import uasyncio
 
+ANIMATION_STATES = ['blink', 'left-to-right', 'sequential', 'ping-pong', 'binary']
+
 class LedMatrix:
-    ANIMATION_STATES = ['blink', 'left-to-right', 'sequential', 'ping-pong', 'binary']
     def __init__(self, pin_matrix, active_high=True, current_animation='left-to-right'):
         
         self.rows = len(pin_matrix)
@@ -15,7 +16,7 @@ class LedMatrix:
         self.is_powered = True
         
         # Validate and set the animation
-        if current_animation not in self.ANIMATION_STATES:
+        if current_animation not in ANIMATION_STATES:
             print(f"Warning: Invalid animation '{current_animation}'. Using default 'blink'.")
             self.current_animation = 'blink'
         else:
@@ -304,15 +305,15 @@ class LedMatrix:
         
         # Make sure we're finding the correct index in ANIMATION_STATES
         try:
-            current_idx = self.ANIMATION_STATES.index(self.current_animation)
+            current_idx = ANIMATION_STATES.index(self.current_animation)
         except ValueError:
             # In case of any issue, restart with blink
             print(f"Warning: Animation '{self.current_animation}' not in ANIMATION_STATES. Resetting to 'blink'.")
             self.current_animation = 'blink'
-            current_idx = self.ANIMATION_STATES.index('blink')
+            current_idx = ANIMATION_STATES.index('blink')
             
         # Move to the next animation in the sequence
-        self.current_animation = self.ANIMATION_STATES[(current_idx + 1) % len(self.ANIMATION_STATES)]
+        self.current_animation = ANIMATION_STATES[(current_idx + 1) % len(ANIMATION_STATES)]
         print(f"Animation changed to: {self.current_animation}")
         
         # Stop current animation and set up the new one

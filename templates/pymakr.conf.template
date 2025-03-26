@@ -23,8 +23,8 @@
         "**/README.md",
         "**/LICENSE"
     ],
-    "upload_chunk_size": 256,
-    "comm_chunk_delay": 10,
+    "upload_chunk_size": 64,
+    "comm_chunk_delay": 50,
     "sync_hidden_files": false,
     "safe_boot_on_upload": true,
     "baudrate": 115200
