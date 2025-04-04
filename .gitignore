@@ -176,6 +176,6 @@ bin/
 lib/wifi_config.py
 
 # Switching of files
-pymakr.conf
-main.py
-boot.py
+/pymakr.conf
+/main.py
+/boot.py

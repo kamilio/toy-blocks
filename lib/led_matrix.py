@@ -43,8 +43,6 @@ class LedMatrix:
                     # No longer accepting raw pin numbers
                     raise ValueError(f"Invalid pin type: {pin}. Must provide either an LED object with on/off/toggle methods or a (shift_register, position) tuple.")
             self.matrix.append(led_row)
-        
-        self.fill()
     
     def set_pixel(self, row, col, value):
         if 0 <= row < self.rows and 0 <= col < self.cols:

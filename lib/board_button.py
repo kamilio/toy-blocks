@@ -1,12 +1,8 @@
-from board_config import BoardConfig
 from machine import Pin
-from button import Button
+import uasyncio
+import time
+from button import DebouncedButton
 
-class BoardButton(Button):
-    def __init__(self, config: BoardConfig):
-        self.config = config
-        super().__init__(
-            pin=self.config.BOOT_BUTTON, 
-            pin_mode=Pin.IN,
-            pull=Pin.PULL_UP
-        )
+class BoardButton(DebouncedButton):
+    def __init__(self, board_config, **kwargs):
+        super().__init__(pin=board_config.board_button_pin, **kwargs)

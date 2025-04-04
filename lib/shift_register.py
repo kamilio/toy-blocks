@@ -1,6 +1,7 @@
 from machine import Pin
-from lib.logger import Logger
 from lib.led import Led
+from lib.logger import Logger
+import time
 
 # SN74HC595N
 #       ┌───────┐   
@@ -25,39 +26,29 @@ from lib.led import Led
 #   8 ──┤GND → Ground       ├── 9  (Q7' → NC or next IC)
 #       └───────────────────┘
 
+# Wire color coding
+# ser - DS (Data Serial) - Blue 
+# rclk - STCP (Storage Register Clock) - Green
+# srclk - SHCP (Shift Register Clock) - Yellow
+
+
 class ShiftRegister:
     def __init__(self, ser, rclk, srclk):
         self.ser_pin = Pin(ser, Pin.OUT)
         self.rclk_pin = Pin(rclk, Pin.OUT)
         self.srclk_pin = Pin(srclk, Pin.OUT)
-        
-        # Set initial pin states - pull all high first
-        self.ser_pin.value(1)
-        self.rclk_pin.value(1)
-        self.srclk_pin.value(1)
-        
-        # Then pull low to ensure clean start
-        self.ser_pin.value(0)
-        self.rclk_pin.value(0)
-        self.srclk_pin.value(0)
-        
-        self.logger = Logger(prefix="SR", debug=False)
-        self.logger.set_threshold(0.5)
-        self.state = bytearray([0])  # Initialize to all zeros as expected by tests
+        self.state = bytearray([0])  # Initialize to all zeros
         self.batch_mode = False
 
     def _pulse_clock(self, pin):
-        import time
         pin.value(0)
-        time.sleep(0.000005)  # 5 microsecond delay (0.000005 seconds)
+        time.sleep(0.000001)  # 1 microsecond delay
         pin.value(1)
-        time.sleep(0.000005)
+        time.sleep(0.000001)
         pin.value(0)
-        time.sleep(0.000005)
 
     def update(self):
         state = self.state[0]
-        self.logger.info(f"Updating state: 0x{state:02x}")
         
         # Send each bit to the shift register
         # Need to send MSB first (bit 7 to bit 0)
@@ -73,10 +64,7 @@ class ShiftRegister:
         if not 0 <= position < 8:
             raise ValueError("Position must be between 0 and 7")
         
-        # Use direct bit position rather than reversing it
         mask = 1 << position
-        self.logger.info(f"Setting pin {position} {'HIGH' if value else 'LOW'}")
-        
         if value:
             self.state[0] |= mask
         else:
@@ -104,13 +92,11 @@ class ShiftRegister:
         return 1 if self.state[0] & mask else 0
 
     def clear(self):
-        self.logger.info("Clearing shift register (all bits to 0)")
-        self.state[0] = 0x00  # All bits to 0 as expected by tests
+        self.state[0] = 0x00
         self.update()
 
     def fill(self):
-        self.logger.info("Filling shift register (all bits to 1)")
-        self.state[0] = 0xFF  # All bits to 1 as expected by tests
+        self.state[0] = 0xFF
         self.update()
         
     def test_sequence(self):
@@ -201,10 +187,6 @@ class ShiftRegisterLed(Led):
         pin_value = not value if self.active_low else value
         self._virtual_pin.value(pin_value)
 
-    def toggle(self):
-        # Simply read the current pin value and invert it
-        # The _set_value method will handle the active_low conversion
-        current = self._virtual_pin.value()
     def toggle(self):
         # Simply read the current pin value and invert it
         # The _set_value method will handle the active_low conversion

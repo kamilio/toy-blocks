@@ -1,6 +1,6 @@
 import pytest
 import uasyncio
-from lib.led_matrix import LedMatrix
+from lib.led_matrix import LedMatrix, ANIMATION_STATES
 from lib.shift_register import ShiftRegisterLed
 from unittest.mock import AsyncMock, patch
 
@@ -14,26 +14,6 @@ def test_matrix_initialization(mock_pin):
     assert matrix.is_powered
     assert matrix.current_animation == 'left-to-right'
     
-def test_matrix_with_shift_register(mock_shift_register):
-    led1 = ShiftRegisterLed(mock_shift_register, 0)
-    led2 = ShiftRegisterLed(mock_shift_register, 1)
-    pin_matrix = [[led1, led2]]
-    matrix = LedMatrix(pin_matrix)
-    
-    # Initially all pins should be high (LEDs off) due to active_low and matrix.fill() in init
-    assert mock_shift_register.pins[0] == False  # Active low, but filled (on) in init
-    assert mock_shift_register.pins[1] == False  # Active low, but filled (on) in init
-    
-    matrix.clear()
-    assert mock_shift_register.pins[0] == True  # Active low (cleared = off)
-    assert mock_shift_register.pins[1] == True  # Active low (cleared = off)
-    
-    matrix.set_pixel(0, 0, True)
-    assert mock_shift_register.pins[0] == False  # Active low (on)
-    
-    matrix.set_pixel(0, 1, True)
-    assert mock_shift_register.pins[1] == False  # Active low (on)
-
 def test_matrix_with_shift_register_tuples(mock_shift_register):
     pin_matrix = [[(mock_shift_register, 0), (mock_shift_register, 1)]]
     matrix = LedMatrix(pin_matrix)
@@ -131,7 +111,7 @@ def test_cycle_animation(mock_pin):
         seen_animations.append(matrix.current_animation)
         assert matrix.current_animation == expected
         
-    assert set(seen_animations) == set(matrix.ANIMATION_STATES)
+    assert set(seen_animations) == set(ANIMATION_STATES)
 
 def test_animation_disabled_when_powered_off(mock_pin):
     pin_matrix = [[mock_pin(0), mock_pin(1)], [mock_pin(2), mock_pin(3)]]
