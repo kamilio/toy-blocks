@@ -103,7 +103,7 @@ def test_cycle_animation(mock_pin):
     
     assert matrix.current_animation == 'left-to-right'
     
-    expected_sequence = ['sequential', 'ping-pong', 'binary', 'blink', 'left-to-right']
+    expected_sequence = ['sequential', 'ping-pong', 'binary', 'radar', 'snake', 'random', 'star', 'pulse', 'blink', 'left-to-right']
     seen_animations = []
     
     for expected in expected_sequence:
@@ -139,7 +139,12 @@ async def test_all_animation_methods(mock_pin):
             (matrix.animate_left_to_right, 'left-to-right'),
             (matrix.animate_sequential, 'sequential'),
             (matrix.animate_ping_pong, 'ping-pong'),
-            (matrix.animate_binary_counter, 'binary')
+            (matrix.animate_binary_counter, 'binary'),
+            (matrix.animate_radar, 'radar'),
+            (matrix.animate_snake, 'snake'),
+            (matrix.animate_random, 'random'),
+            (matrix.animate_star, 'star'),
+            (matrix.animate_pulse, 'pulse')
         ]
         
         for animate, name in animations:

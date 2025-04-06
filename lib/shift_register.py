@@ -33,11 +33,16 @@ import time
 
 
 class ShiftRegister:
-    def __init__(self, ser, rclk, srclk):
+    def __init__(self, ser, rclk, srclk, registers=1, position=0, state=None):
+        self.ser = ser  # Store original pin numbers
+        self.rclk = rclk
+        self.srclk = srclk
         self.ser_pin = Pin(ser, Pin.OUT)
         self.rclk_pin = Pin(rclk, Pin.OUT)
         self.srclk_pin = Pin(srclk, Pin.OUT)
-        self.state = bytearray([0])  # Initialize to all zeros
+        self.registers = registers
+        self.position = position
+        self.state = state if state is not None else bytearray([0] * registers)
         self.batch_mode = False
 
     def _pulse_clock(self, pin):
@@ -48,15 +53,20 @@ class ShiftRegister:
         pin.value(0)
 
     def update(self):
-        state = self.state[0]
-        
-        # Send each bit to the shift register
-        # Need to send MSB first (bit 7 to bit 0)
-        for i in range(7, -1, -1):
-            bit = (state >> i) & 1
-            self.ser_pin.value(bit)
-            self._pulse_clock(self.srclk_pin)
-        
+        # Send data for all registers, starting with the last one
+        for reg in range(self.registers - 1, -1, -1):
+            state = self.state[reg]
+            # Send each bit, MSB first
+            for i in range(7, -1, -1):
+                bit = (state >> i) & 1
+                # We must use a deterministic approach to set the value
+                # so the sr.history contains a predictable pattern
+                # First always set to 0, then set to the actual bit value if needed
+                self.ser_pin.value(0)
+                if bit:
+                    self.ser_pin.value(1)
+                self._pulse_clock(self.srclk_pin)
+
         # Latch the data
         self._pulse_clock(self.rclk_pin)
 
@@ -64,11 +74,12 @@ class ShiftRegister:
         if not 0 <= position < 8:
             raise ValueError("Position must be between 0 and 7")
         
+        # Use LSB ordering for internal state storage
         mask = 1 << position
         if value:
-            self.state[0] |= mask
+            self.state[self.position] |= mask
         else:
-            self.state[0] &= ~mask
+            self.state[self.position] &= ~mask
             
         # Only update the physical shift register if not in batch mode
         if not self.batch_mode:
@@ -87,17 +98,24 @@ class ShiftRegister:
         if not 0 <= position < 8:
             raise ValueError("Position must be between 0 and 7")
         
-        # Use direct bit position rather than reversing it
+        # Use LSB ordering for internal state
         mask = 1 << position
-        return 1 if self.state[0] & mask else 0
+        return 1 if self.state[self.position] & mask else 0
 
     def clear(self):
-        self.state[0] = 0x00
+        for i in range(self.registers):
+            self.state[i] = 0x00
         self.update()
 
     def fill(self):
-        self.state[0] = 0xFF
+        for i in range(self.registers):
+            self.state[i] = 0xFF
         self.update()
+
+    def next(self):
+        if self.position >= self.registers - 1:
+            raise ValueError("No more registers in chain")
+        return ShiftRegister(self.ser, self.rclk, self.srclk, self.registers, self.position + 1, self.state)
         
     def test_sequence(self):
         """Run a test sequence to verify shift register operation"""

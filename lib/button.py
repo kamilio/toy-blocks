@@ -5,7 +5,11 @@ from logger import Logger
 
 class Button:
     def __init__(self, pin: int, pin_mode=Pin.IN, pull=Pin.PULL_UP, debug=True):
-        self.pin = Pin(pin, pin_mode, pull)
+        try:
+            self.pin = Pin(pin, pin_mode, pull)
+        except ValueError as e:
+            raise ValueError(f"Invalid pin number {pin}: {str(e)}")
+        
         self._running = False
         self.logger = Logger(prefix=f"Button(pin={pin})", debug=debug)
         self._callbacks = {'down': None, 'up': None, 'press': None}

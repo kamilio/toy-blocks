@@ -22,6 +22,7 @@ class BoardConfig:
         self.BOOT_BUTTON = 0
         self.BUILTIN_LED = 2
         self.LED_PIN = self.BUILTIN_LED
+        self.TTP223_BUTTON = 27  # Default TTP223 touch sensor pin for ESP32
         
         # Communication pins
         self.I2C_SCL = 22
@@ -43,6 +44,7 @@ class BoardConfig:
         # Override for ESP32-C3
         if self._detected_board == "ESP32-C3":
             self.BOOT_BUTTON = 9
+            self.TTP223_BUTTON = 20
             self.BUILTIN_LED = 8
             self.LED_PIN = self.BUILTIN_LED
             self.I2C_SCL = 4

@@ -3,10 +3,9 @@ import uasyncio
 from board_config import BoardConfig
 
 class DebugLed:
-    def __init__(self, pin=None, active_low=None):
-        board = BoardConfig()
-        pin = pin if pin is not None else board.LED_PIN
-        active_low = active_low if active_low is not None else board.is_builtin_led_active_low()
+    def __init__(self, board_config, pin=None, active_low=None):
+        pin = pin if pin is not None else board_config.LED_PIN
+        active_low = active_low if active_low is not None else board_config.is_builtin_led_active_low()
         self.led = Pin(pin, Pin.OUT)
         self.active_low = active_low
         self._blink_forever = False

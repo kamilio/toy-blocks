@@ -1,12 +1,11 @@
 import uasyncio
 from auto_shutdown import AutoShutdown
-from board_button import BoardButton
+from button import DebouncedButton
 from debug_led import DebugLed
 from board_config import BoardConfig
 from wifi import WiFi
 
 auto_shutdown = AutoShutdown(timeout=60) # 600 seconds = 10 minutes
-debug_led = DebugLed()
 wifi = WiFi()
 
 async def handle_click():
@@ -14,7 +13,8 @@ async def handle_click():
     await debug_led.blink(3, 0.2)
 
 board_config = BoardConfig()
-button = BoardButton(board_config)
+debug_led = DebugLed(board_config=board_config)
+button = DebouncedButton(board_config.BOOT_BUTTON)
 button.on_press(handle_click)
 
 async def main():

@@ -3,7 +3,8 @@ from lib.led import Led
 from lib.shift_register import ShiftRegisterLed
 import uasyncio
 
-ANIMATION_STATES = ['blink', 'left-to-right', 'sequential', 'ping-pong', 'binary']
+ANIMATION_STATES = ['blink', 'left-to-right', 'sequential', 'ping-pong', 'binary', 
+                   'radar', 'snake', 'random', 'star', 'pulse']
 
 class LedMatrix:
     def __init__(self, pin_matrix, active_high=True, current_animation='left-to-right'):
@@ -286,6 +287,133 @@ class LedMatrix:
             await uasyncio.sleep(self.animation_delay/1000)
             
         return animation_step
+    
+    def animate_radar(self):
+        """
+        Create a radar-like sweeping animation, ideal for pentagon LED layout.
+        Single LED moves around the pentagon perimeter.
+        """
+        current_pos = 0
+        
+        async def animation_step():
+            nonlocal current_pos
+            
+            # For a pentagon, we want to light LEDs in a circular pattern
+            def pattern(row, col):
+                # Calculate total position in matrix
+                pos = row * self.cols + col
+                # Return True only for the current radar position
+                return pos == current_pos
+            
+            self._set_matrix_pattern(pattern)
+            
+            # Move to next position in pentagon pattern
+            current_pos = (current_pos + 1) % (self.rows * self.cols)
+            await uasyncio.sleep(self.animation_delay/1000)
+            
+        return animation_step
+    
+    def animate_snake(self):
+        """
+        Create a snake-like animation moving around the pentagon.
+        Three LEDs lit in sequence, following each other.
+        """
+        head_pos = 0
+        
+        async def animation_step():
+            nonlocal head_pos
+            
+            # Define pattern that lights up 3 consecutive positions
+            def pattern(row, col):
+                pos = row * self.cols + col
+                total_leds = self.rows * self.cols
+                # Light up head and two trailing positions
+                return (pos == head_pos or 
+                       pos == ((head_pos - 1) % total_leds) or 
+                       pos == ((head_pos - 2) % total_leds))
+            
+            self._set_matrix_pattern(pattern)
+            
+            # Move snake head forward
+            head_pos = (head_pos + 1) % (self.rows * self.cols)
+            await uasyncio.sleep(self.animation_delay/1000)
+            
+        return animation_step
+    
+    def animate_random(self):
+        """
+        Create symmetric random patterns suitable for pentagon layout.
+        """
+        import random
+        pattern_duration = 0
+        current_pattern = {}
+        
+        async def animation_step():
+            nonlocal pattern_duration, current_pattern
+            
+            if pattern_duration <= 0:
+                # Generate new symmetric pattern
+                current_pattern = {(row, col): random.choice([True, False])
+                                 for row in range(self.rows)
+                                 for col in range(self.cols)}
+                pattern_duration = 3  # Keep pattern for 3 steps
+            
+            pattern_duration -= 1
+            self._set_matrix_pattern(lambda r, c: current_pattern[(r, c)])
+            await uasyncio.sleep(self.animation_delay/1000)
+            
+        return animation_step
+
+    def animate_star(self):
+        """
+        Create a star pattern effect by alternating between inner and outer LEDs.
+        """
+        state = False
+        
+        async def animation_step():
+            nonlocal state
+            
+            def pattern(row, col):
+                # For pentagon layout, alternate between outer and inner positions
+                pos = row * self.cols + col
+                total_leds = self.rows * self.cols
+                is_outer = pos % 2 == 0  # Every other LED is on the outer edge
+                return is_outer if state else not is_outer
+            
+            self._set_matrix_pattern(pattern)
+            state = not state
+            await uasyncio.sleep(self.animation_delay/1000)
+            
+        return animation_step
+
+    def animate_pulse(self):
+        """
+        Create a breathing/pulsing effect using patterns.
+        """
+        phase = 0
+        max_phases = 8  # Number of different patterns to create pulsing effect
+        
+        async def animation_step():
+            nonlocal phase
+            
+            def pattern(row, col):
+                # Calculate LED position in pentagon
+                pos = row * self.cols + col
+                total_leds = self.rows * self.cols
+                
+                # Create pulsing pattern based on current phase
+                if phase < max_phases // 2:
+                    # Expanding phase
+                    return pos < (phase + 1)
+                else:
+                    # Contracting phase
+                    return pos < (max_phases - phase)
+            
+            self._set_matrix_pattern(pattern)
+            phase = (phase + 1) % max_phases
+            await uasyncio.sleep(self.animation_delay/1000)
+            
+        return animation_step
         
     def toggle_power(self):
         self.is_powered = not self.is_powered
@@ -333,6 +461,16 @@ class LedMatrix:
             self._animation_step = self.animate_ping_pong()
         elif self.current_animation == 'binary':
             self._animation_step = self.animate_binary_counter()
+        elif self.current_animation == 'radar':
+            self._animation_step = self.animate_radar()
+        elif self.current_animation == 'snake':
+            self._animation_step = self.animate_snake()
+        elif self.current_animation == 'random':
+            self._animation_step = self.animate_random()
+        elif self.current_animation == 'star':
+            self._animation_step = self.animate_star()
+        elif self.current_animation == 'pulse':
+            self._animation_step = self.animate_pulse()
         else:
             # Default to blink if animation not recognized
             print(f"Warning: Unknown animation '{self.current_animation}'. Using 'blink'.")
