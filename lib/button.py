@@ -14,6 +14,7 @@ class Button:
         self.logger = Logger(prefix=f"Button(pin={pin})", debug=debug)
         self._callbacks = {'down': None, 'up': None, 'press': None}
         self._was_pressed = None
+        self.was_pressed = False
 
     def is_pressed(self):
         return not bool(self.pin.value())
@@ -50,6 +51,7 @@ class Button:
             await self._run_callback('press')
             await self._run_callback('up')
             self._was_pressed = False
+            self.was_pressed = True
 
     async def monitor(self):
         self._running = True
@@ -63,6 +65,12 @@ class Button:
             
     def stop(self):
         self._running = False
+
+    def consume_was_pressed(self):
+        """Returns True if the button was pressed since last check and resets the state"""
+        was_pressed = self.was_pressed
+        self.was_pressed = False
+        return was_pressed
 
 class DebouncedButton(Button):
     def __init__(self, pin: int, debounce_ms=20, **kwargs):
