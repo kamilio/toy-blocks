@@ -1,7 +1,7 @@
 """
-TTP223 Touch Sensor Module
+Capacitive Touch Sensor Module
 
-This module provides a class for interfacing with TTP223 capacitive touch sensors
+This module provides a class for interfacing with capacitive touch sensors (like TTP223)
 on ESP32 microcontrollers. It handles the specific behavior of these sensors,
 including proper debouncing and event callbacks.
 
@@ -10,7 +10,7 @@ Typical wiring:
 - GND: Connect to ground
 - SIG/OUT: Connect to a GPIO pin (this is the pin you specify in the constructor)
 
-TTP223 Behavior:
+Sensor Behavior:
 - The sensor outputs LOW (0) when not touched
 - The sensor outputs HIGH (1) when touched
 - Some modules may have a jumper to change between toggle and momentary modes
@@ -21,11 +21,11 @@ import uasyncio
 import time
 from logger import Logger
 
-class TTP223TouchSensor:
+class CapacitiveTouchSensor:
     """
-    A class for controlling TTP223 capacitive touch sensors.
+    A class for controlling capacitive touch sensors like TTP223.
     
-    This class properly handles the TTP223 behavior:
+    This class properly handles the touch sensor behavior:
     1. Provides debouncing to avoid false triggers
     2. Handles momentary touch mode (sensor outputs HIGH when touched)
     3. Allows registering callbacks for touch events
@@ -33,10 +33,10 @@ class TTP223TouchSensor:
     
     def __init__(self, pin, debounce_ms=50, active_high=True, pull_down=True, debug=False):
         """
-        Initialize a TTP223 touch sensor.
+        Initialize a capacitive touch sensor.
         
         Args:
-            pin: The GPIO pin number connected to the TTP223 SIG/OUT pin
+            pin: The GPIO pin number connected to the sensor's SIG/OUT pin
             debounce_ms: Debounce time in milliseconds to avoid false triggers
             active_high: True if sensor outputs HIGH when touched (default behavior)
             pull_down: Whether to enable pull-down resistor on the pin
@@ -64,7 +64,7 @@ class TTP223TouchSensor:
         self._on_toggle = None
         
         # Logger for debugging
-        self.logger = Logger(prefix=f"TTP223(pin={pin})", debug=debug)
+        self.logger = Logger(prefix=f"CapacitiveTouchSensor(pin={pin})", debug=debug)
         self.logger.info("Initialized")
 
     def is_touched(self):
@@ -199,7 +199,7 @@ class TTP223TouchSensor:
     @staticmethod
     async def test_pin(pin, duration=5):
         """
-        Test a pin to see if a TTP223 sensor is connected and functional.
+        Test a pin to see if a capacitive touch sensor is connected and functional.
         
         Args:
             pin: The GPIO pin to test
@@ -208,7 +208,7 @@ class TTP223TouchSensor:
         Returns:
             dict: Test results including detected state changes
         """
-        print(f"Testing pin {pin} for TTP223 touch sensor...")
+        print(f"Testing pin {pin} for capacitive touch sensor...")
         
         # Try different pin configurations
         configs = [

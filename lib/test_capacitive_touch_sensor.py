@@ -1,13 +1,13 @@
 import pytest
 from unittest.mock import patch, AsyncMock
-from ttp223 import TTP223TouchSensor
+from capacitive_touch_sensor import CapacitiveTouchSensor
 import uasyncio
 import time
 from pin_mock import MockPin as Pin
 
 # Patch machine.Pin with our MockPin for testing
-import ttp223
-ttp223.Pin = Pin
+import capacitive_touch_sensor
+capacitive_touch_sensor.Pin = Pin
 
 @pytest.fixture(autouse=True)
 def clear_pins():
@@ -17,7 +17,7 @@ def clear_pins():
 @pytest.mark.asyncio
 async def test_touch_sensor_init():
     """Test that the touch sensor initializes correctly with default values."""
-    sensor = TTP223TouchSensor(pin=0)
+    sensor = CapacitiveTouchSensor(pin=0)
     
     # Check default values
     assert sensor.pin_num == 0
@@ -38,7 +38,7 @@ async def test_touch_detection():
         touch_called = True
     
     # Create sensor with active_high=True (default)
-    sensor = TTP223TouchSensor(pin=0)
+    sensor = CapacitiveTouchSensor(pin=0)
     sensor.on_touch(on_touch)
     
     # Initial state: not touched (LOW)
@@ -83,7 +83,7 @@ async def test_release_detection():
         release_called = True
     
     # Create sensor with active_high=True
-    sensor = TTP223TouchSensor(pin=0)
+    sensor = CapacitiveTouchSensor(pin=0)
     sensor.on_release(on_release)
     
     # Start in touched state
@@ -129,7 +129,7 @@ async def test_active_low_configuration():
         touch_detected = True
     
     # Create sensor with active_high=False
-    sensor = TTP223TouchSensor(pin=0, active_high=False)
+    sensor = CapacitiveTouchSensor(pin=0, active_high=False)
     sensor.on_touch(on_touch)
     
     # In active_low mode, LOW means touched
@@ -150,7 +150,7 @@ async def test_debounce():
         touch_count += 1
     
     # 100ms debounce time
-    sensor = TTP223TouchSensor(pin=0, debounce_ms=100)
+    sensor = CapacitiveTouchSensor(pin=0, debounce_ms=100)
     sensor.on_touch(on_touch)
     
     # Initial state
@@ -191,7 +191,7 @@ async def test_toggle_callback():
         nonlocal toggle_count
         toggle_count += 1
     
-    sensor = TTP223TouchSensor(pin=0)
+    sensor = CapacitiveTouchSensor(pin=0)
     sensor.on_toggle(on_toggle)
     
     # Initial state
@@ -223,7 +223,7 @@ async def test_toggle_callback():
 @pytest.mark.asyncio
 async def test_monitor_stops():
     """Test that the monitor function stops correctly."""
-    sensor = TTP223TouchSensor(pin=0)
+    sensor = CapacitiveTouchSensor(pin=0)
     
     # Create awaitable callbacks
     touch_called = False
