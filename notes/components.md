@@ -11,7 +11,7 @@
 - PAM8403 Audio Amplifier (green)
 - TTP223 Touch Switch Module (blue)
 - HC-SR501 Motion Sensor
-
+- Micro SD Card Reader Module SPI interfaces with level converter 
 
 # Consider
 Qi Receiver + Transmitter Modules

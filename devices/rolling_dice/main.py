@@ -14,43 +14,23 @@ async def main():
         rolling_dice = RollingDice(board_config.dice_pins)
         debug_led = DebugLed(board_config)
         
-        # Set up Reed switch on pin 10 using Button class
-        try:
-            reed_switch = Button(
-                pin=10, 
-                pin_mode=Pin.IN, 
-                pull=Pin.PULL_UP, 
-                debug=True
-            )
-            print("Reed switch initialized on pin 10")
-        except Exception as e:
-            print(f"Exception initializing Reed switch: {str(e)}")
-            raise Exception("ESP32 C3 required for pin 10 Reed switch")
-            
-        # Set up Reed switch callbacks for monitoring
-        async def on_reed_closed():
-            print("Reed switch CLOSED (magnetic field detected)")
-            
-        async def on_reed_opened():
-            print("Reed switch OPENED (magnetic field removed)")
-            
-        # Register callbacks - button down = switch closed (magnet present)
-        reed_switch.on_button_down(on_reed_closed)
-        reed_switch.on_button_up(on_reed_opened)
+        reed_switch = Button(
+            pin=10, 
+            pin_mode=Pin.IN, 
+            pull=Pin.PULL_UP
+        )
         
         # Turn off the LED initially
         debug_led.off()
 
         # Set up dice roll handler
         async def handle_roll():
-            rolling_dice.roll()
+            was_pressed = reed_switch.consume_was_pressed() 
+            await rolling_dice.roll(6 if was_pressed else None)
 
         # Set up BOOT button
         boot_button = DebouncedButton(board_config.BOOT_BUTTON)
         boot_button.on_press(handle_roll)
-        
-        # Print initial state
-        print(f"Initial Reed switch state: {'CLOSED' if reed_switch.is_pressed() else 'OPEN'}")
         
         # Set up TTP223 touch sensor with our specialized class
         touch_sensor = TTP223TouchSensor(
@@ -73,7 +53,7 @@ async def main():
         touch_sensor.on_release(on_release)
         
         # Initial roll on startup
-        rolling_dice.roll()
+        await rolling_dice.roll()
         
         
         print("Dice system running...")

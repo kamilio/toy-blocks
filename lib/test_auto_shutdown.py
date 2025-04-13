@@ -1,4 +1,4 @@
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch, AsyncMock, MagicMock
 import pytest
 from auto_shutdown import AutoShutdown
 import sys
@@ -8,15 +8,18 @@ import uasyncio
 async def test_init():
     """Test initialization sets correct timeout"""
     with patch('auto_shutdown.time', return_value=100):
-        auto = AutoShutdown(timeout=60)
-        assert auto.timeout == 60
-        assert auto.start_time == 100
+        # Patch any direct access to the AudioAmplifier if needed
+        with patch('lib.audio_amplifier.AudioAmplifier._monitor', new_callable=AsyncMock):
+            auto = AutoShutdown(timeout=60)
+            assert auto.timeout == 60
+            assert auto.start_time == 100
     assert auto.start_time > 0
 
 @pytest.mark.asyncio
 async def test_no_deepsleep_before_timeout():
     """Test deepsleep not called before timeout"""
-    with patch('auto_shutdown.time', side_effect=[100, 150]) as mock_time:
+    with patch('auto_shutdown.time', side_effect=[100, 150]) as mock_time, \
+         patch('lib.audio_amplifier.AudioAmplifier._monitor', new_callable=AsyncMock):
         mock_machine = sys.modules['machine']
         
         auto = AutoShutdown(timeout=60)

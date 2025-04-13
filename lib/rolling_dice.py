@@ -1,5 +1,6 @@
-from machine import Pin, Timer
+from machine import Pin
 from lib.led import Led
+import uasyncio as asyncio
 import random
 
 class RollingDice:
@@ -86,33 +87,39 @@ class RollingDice:
             self.animation_timer.deinit()
             self.animation_timer = None
     
-    def roll(self):
+    async def roll(self, number=None):
+        """Roll the dice with an LED animation, returning the final number.
+        
+        Args:
+            number (int, optional): Force a specific number (1-6). If not provided, randomly chosen.
+        """
+        if number is not None and (not isinstance(number, int) or number < 1 or number > 6):
+            raise ValueError("Forced number must be an integer between 1 and 6")
+            
         self._stop_animation()
         self.animation_count = 0
         animation_position = 0
-        final_number = random.randint(1, 6)
+        final_number = number if number is not None else random.randint(1, 6)
         
-        def animation_step(timer):
-            nonlocal animation_position            
-            if self.animation_count < self.ANIMATION_STEPS:
-                self.clear()
-                # Single dot circling: TL -> TR -> BR -> LR -> LL -> BL
-                edge_leds = [0, 1, 4, 6, 5, 3]  # TL, TR, BR, LR, LL, BL
-                curr_pos = animation_position % len(edge_leds)
-                
-                self.leds[edge_leds[curr_pos]].on()  # Light only current LED
-                for led in self.leds:
-                    if hasattr(led.led, 'shift_register'):
-                        led.led.shift_register.write()
-                animation_position += 1
-                self.animation_count += 1
-            else:
-                self.display_number(final_number)
-                self.current_number = final_number
-                self._stop_animation()
+        # Single dot circling: TL -> TR -> BR -> LR -> LL -> BL
+        edge_leds = [0, 1, 4, 6, 5, 3]  # TL, TR, BR, LR, LL, BL
         
-        self.animation_timer = Timer(-1)
-        self.animation_timer.init(period=self.animation_delay, mode=Timer.PERIODIC, callback=animation_step)
+        while self.animation_count < self.ANIMATION_STEPS:
+            self.clear()
+            curr_pos = animation_position % len(edge_leds)
+            
+            self.leds[edge_leds[curr_pos]].on()  # Light only current LED
+            for led in self.leds:
+                if hasattr(led.led, 'shift_register'):
+                    led.led.shift_register.write()
+            
+            animation_position += 1
+            self.animation_count += 1
+            await asyncio.sleep(self.animation_delay / 1000)  # Convert ms to seconds
+        
+        self.display_number(final_number)
+        self.current_number = final_number
+        return final_number
 
     def debug_display(self):
         print("\nDice LED Pin Layout:\n")
