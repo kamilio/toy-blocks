@@ -10,7 +10,7 @@ class CubeSide(Enum):
     FRONT = const("front")
     BACK = const("back")
 
-class MPU6050:
+class CubeOrientationSensor:
     PWR_MGMT_1 = const(0x6B)
     ACCEL_XOUT_H = const(0x3B)
     ACCEL_YOUT_H = const(0x3D)
