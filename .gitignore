@@ -179,3 +179,4 @@ lib/wifi_config.py
 /pymakr.conf
 /main.py
 /boot.py
+.vscode/
