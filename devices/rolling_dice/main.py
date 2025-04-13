@@ -5,7 +5,7 @@ from button import Button, DebouncedButton
 from board_config import BoardConfig
 from rolling_dice import RollingDice
 from debug_led import DebugLed
-from ttp223 import TTP223TouchSensor
+from capacitive_touch_sensor import CapacitiveTouchSensor
 
 async def main():
     try:
@@ -32,8 +32,8 @@ async def main():
         boot_button = DebouncedButton(board_config.BOOT_BUTTON)
         boot_button.on_press(handle_roll)
         
-        # Set up TTP223 touch sensor with our specialized class
-        touch_sensor = TTP223TouchSensor(
+        # Set up capacitive touch sensor with our specialized class
+        touch_sensor = CapacitiveTouchSensor(
             pin=board_config.TTP223_BUTTON,
             pull_down=True,  # Use pull-down resistor
             active_high=True,  # TTP223 outputs HIGH when touched
