@@ -1,5 +1,12 @@
 class Note:
-    REST = 0
+    """
+    Note frequencies for piezo buzzer
+    
+    This class defines frequency constants for musical notes that can be 
+    played on a piezo buzzer. The frequencies are in Hz and correspond to 
+    standard musical notes.
+    """
+    REST = 0  # Silence, no sound
     C4 = 262
     CS4 = 277
     D4 = 294
@@ -30,6 +37,12 @@ class Note:
         return cls(value)
 
 class Duration:
+    """
+    Duration constants for piezo buzzer notes
+    
+    This class defines duration constants for musical notes that can be 
+    played on a piezo buzzer. The durations are in milliseconds.
+    """
     WHOLE = 1000
     HALF = 500
     QUARTER = 250

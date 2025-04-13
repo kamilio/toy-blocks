@@ -48,3 +48,14 @@ Mocking
 - Always await coroutines in tests. You define callbacks, so make sure to await them.
 - Must ask me when adding new mocks
     - When approved -a dd new mocks into the mock files or conftest
+
+# Verify files
+- Create only when specifically requested
+- Simplest possible way to test the component, whether the wiring is correct e.g. beeper should beep and we are done
+- main() method, however it should be only requested explicitely
+- I will include this file in my project for debuggin when needed
+
+
+# Other files when writing python code
+- No markdown files
+- No example files

@@ -4,7 +4,6 @@ This tries several different approaches to turning on all LEDs.
 """
 
 import time
-from machine import Pin
 from board_config import BoardConfig
 from shift_register import ShiftRegister
 
@@ -74,6 +73,3 @@ def main():
     time.sleep(5)
     
     print("\nTest complete! Did any method work?")
-
-if __name__ == "__main__":
-    main()

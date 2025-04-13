@@ -1,4 +1,9 @@
-from lib.speaker_types import Note, Duration
+from lib.piezo_buzzer_types import Note, Duration
+
+"""
+Collection of songs for the piezo buzzer
+Each song is a list of (note, duration) tuples specific to piezo buzzer usage
+"""
 
 COME_AS_YOU_ARE = [
     # First sequence
@@ -21,7 +26,7 @@ COME_AS_YOU_ARE = [
     (Note.D4, Duration.EIGHTH),
 ]
 
-smoke_on_the_water = [
+SMOKE_ON_THE_WATER = [
     (Note.D4, Duration.QUARTER),
     (Note.F4, Duration.HALF),
     (Note.G4, Duration.HALF),

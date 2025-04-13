@@ -1,6 +1,6 @@
 from machine import Pin, PWM
 import uasyncio
-from speaker_types import Note, Duration
+from lib.piezo_buzzer_types import Note, Duration
 from logger import Logger
 
 class PWMWrapper:
@@ -29,20 +29,26 @@ class PWMWrapper:
         self._duty = value
         self.pwm.duty_u16(value)
 
-class Speaker:
+class PiezoBuzzer:
+    """
+    PiezoBuzzer class for controlling a piezo buzzer using PWM.
+    This class is specifically designed for piezo buzzers, which use PWM signals 
+    to generate tones at different frequencies.
+    """
     def __init__(self, pin: int, freq=440):
         self.pwm = PWMWrapper(Pin(pin, Pin.OUT), freq)
-        self.logger = Logger("Speaker", debug=False)
+        self.logger = Logger("PiezoBuzzer", debug=False)
     
     def _turn_on(self):
         self.pwm.duty_u16 = 32768  # 50% duty cycle
-        self.logger.info("Speaker turned on")
+        self.logger.info("Piezo buzzer turned on")
     
     def _turn_off(self):
         self.pwm.duty_u16 = 0
-        self.logger.info("Speaker turned off")
+        self.logger.info("Piezo buzzer turned off")
     
     async def beep(self, count=1, duration_ms=100, interval_ms=100):
+        """Generate beeps on the piezo buzzer"""
         for i in range(count):
             self._turn_on()
             await uasyncio.sleep(duration_ms / 1000)  # Convert ms to seconds
@@ -51,6 +57,7 @@ class Speaker:
                 await uasyncio.sleep(interval_ms / 1000)  # Convert ms to seconds
     
     async def play_note(self, note, duration):
+        """Play a musical note on the piezo buzzer"""
         if not isinstance(note, Note):
             note = Note.from_int(note)
         if not isinstance(duration, Duration):
@@ -67,7 +74,11 @@ class Speaker:
         self._turn_off()
     
     async def play_song(self, song):
-        self.logger.info("Starting to play song")
+        """
+        Play a sequence of notes (song) on the piezo buzzer
+        Each song is a list of (note, duration) tuples
+        """
+        self.logger.info("Starting to play song on piezo buzzer")
         for note, duration in song:
             await self.play_note(note, duration)
             # Always add a small gap between notes for consistent rhythm
