@@ -1,16 +1,17 @@
 from machine import Pin
 
+
 class Led:
     def __init__(self, pin, active_low=False):
-        try: 
+        try:
             if hasattr(pin, 'value'):  # Check if pin is already a Pin or VirtualPin object
                 self.led = pin
             else:
                 self.led = Pin(pin, Pin.OUT)
         except Exception as e:
-            print(f"Error initializing LED on pin {pin}: {e}")
+            print(f'Error initializing LED on pin {pin}: {e}')
             raise e
-        
+
         self.active_low = active_low
         self.off()
 

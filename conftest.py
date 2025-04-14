@@ -1,50 +1,27 @@
-import sys
 import os
-import pytest
+import sys
 
 # Add lib directory to Python path
 lib_dir = os.path.join(os.path.dirname(__file__), 'lib')
 sys.path.insert(0, lib_dir)
 
-from time_mock import (
-    mock_current_time, advance_time, mock_const, mock_time,
-    reset_time
-)
+# Now we can import the mock modules
+import bluetooth_mock  # noqa: E402
+import hardware_mock  # noqa: E402
+import network_mock  # noqa: E402
+import time_mock  # noqa: E402
+import uasyncio_mock  # noqa: E402
+from pin_mock import MockPin, mock_pin  # noqa: E402, F401
+from shift_register_mock import mock_shift_register  # noqa: E402, F401
 
-from pin_mock import (
-    MockPin,
-    mock_pin
-)
-
-from hardware_mock import (
-    MockRTC,
-    mock_machine
-)
-
-from bluetooth_mock import (
-    MockBLE,
-    mock_bluetooth
-)
-
-from network_mock import (
-    MockWLAN,
-    MockResponse,
-    mock_network,
-    mock_urequests,
-    mock_get
-)
-
-from shift_register_mock import (
-    MockShiftRegister,
-    ShiftRegisterLed,
-    mock_shift_register
-)
-
-from uasyncio_mock import (
-    mock_sleep,
-    mock_create_task,
-    mock_uasyncio
-)
+# Get the necessary variables from the modules
+mock_bluetooth = bluetooth_mock.mock_bluetooth
+mock_machine = hardware_mock.mock_machine
+mock_network = network_mock.mock_network
+mock_urequests = network_mock.mock_urequests
+mock_const = time_mock.mock_const
+mock_time = time_mock.mock_time
+mock_uasyncio = uasyncio_mock.mock_uasyncio
 
 # Set up mock modules in sys.modules
 mock_micropython = mock_machine  # reuse machine mock for micropython

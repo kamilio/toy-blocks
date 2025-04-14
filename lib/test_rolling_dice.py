@@ -1,55 +1,53 @@
 import pytest
-from lib.shift_register import ShiftRegister, ShiftRegisterLed
-from lib.rolling_dice import RollingDice
-import time
-import pytest_asyncio
-import uasyncio as asyncio
-from pin_mock import MockPin
 from uasyncio_mock import mock_sleep, reset_mock_sleep
+
+from lib.rolling_dice import RollingDice
+from lib.shift_register import ShiftRegister
+
 
 @pytest.fixture(autouse=True)
 def reset_sleep():
     reset_mock_sleep()
 
+
 @pytest.mark.asyncio
 async def test_dice_roll(mocker):
     """Test the async roll function"""
-    Pin = MockPin
     shift_register = ShiftRegister(5, 6, 7)
     virtual_pins = [(shift_register, i) for i in range(7)]
     dice = RollingDice(virtual_pins)
 
     # Mock random to get consistent results
     mocker.patch('random.randint', return_value=6)
-    
+
     # Execute roll
     result = await dice.roll()
-    
+
     # Verify final number
     assert result == 6
     assert dice.current_number == 6
-    
+
     # Verify proper animation execution
-    assert mock_sleep.call_count > 0, "Animation should have sleep calls"
-    assert result == 6, "Should return the mocked value"
-    assert dice.animation_count == dice.ANIMATION_STEPS, "Should complete all animation steps"
-    
+    assert mock_sleep.call_count > 0, 'Animation should have sleep calls'
+    assert result == 6, 'Should return the mocked value'
+    assert dice.animation_count == dice.ANIMATION_STEPS, 'Should complete all animation steps'
+
     # Verify final LED pattern matches the result
     pattern = dice.DICE_PATTERNS[result]
     for led, expected_value in zip(dice.leds, pattern):
         assert led.led.value() == expected_value
 
+
 @pytest.mark.asyncio
 async def test_rolling_dice_gpio_initialization():
-    Pin = MockPin
     pins = [5, 6, 7, 8, 9, 10, 11]
     dice = RollingDice(pins)
     assert len(dice.leds) == 7
     assert dice.current_number is None
 
+
 @pytest.mark.asyncio
 async def test_rolling_dice_shift_register_initialization():
-    Pin = MockPin
     shift_register = ShiftRegister(5, 6, 7)
     virtual_pins = [(shift_register, i) for i in range(7)]
     dice = RollingDice(virtual_pins)
@@ -59,9 +57,9 @@ async def test_rolling_dice_shift_register_initialization():
     for led in dice.leds:
         assert led.led.value() == 0
 
+
 @pytest.mark.asyncio
 async def test_dice_display_pattern():
-    Pin = MockPin
     pins = [5, 6, 7, 8, 9, 10, 11]
     dice = RollingDice(pins)
 
@@ -74,9 +72,9 @@ async def test_dice_display_pattern():
         else:
             assert led.led.value() == 0
 
+
 @pytest.mark.asyncio
 async def test_dice_shift_register_display_pattern():
-    Pin = MockPin
     shift_register = ShiftRegister(5, 6, 7)
     virtual_pins = [(shift_register, i) for i in range(7)]
     dice = RollingDice(virtual_pins)
@@ -90,9 +88,9 @@ async def test_dice_shift_register_display_pattern():
         else:
             assert led.led.value() == 0
 
+
 @pytest.mark.asyncio
 async def test_dice_clear():
-    Pin = MockPin
     shift_register = ShiftRegister(5, 6, 7)
     virtual_pins = [(shift_register, i) for i in range(7)]
     dice = RollingDice(virtual_pins)
@@ -110,9 +108,9 @@ async def test_dice_clear():
     for led in dice.leds:
         assert led.led.value() == 0
 
+
 @pytest.mark.asyncio
 async def test_dice_cycle_number():
-    Pin = MockPin
     shift_register = ShiftRegister(5, 6, 7)
     virtual_pins = [(shift_register, i) for i in range(7)]
     dice = RollingDice(virtual_pins)
@@ -130,15 +128,16 @@ async def test_dice_cycle_number():
         else:
             assert led.led.value() == 0
 
+
 @pytest.mark.asyncio
 async def test_dice_debug_display_gpio(capsys):
     pins = [5, 6, 7, 8, 9, 10, 11]
     dice = RollingDice(pins)
     capsys.readouterr()  # Clear previous output
-    
+
     dice.debug_display()
     captured = capsys.readouterr()
-    
+
     expected_output = """
 Dice LED Pin Layout:
 
@@ -153,8 +152,9 @@ Dice LED Pin Layout:
 
    10     11
    (LL)   (LR)"""
-    
+
     assert captured.out.strip() == expected_output.strip()
+
 
 @pytest.mark.asyncio
 async def test_dice_debug_display_shift_register(capsys):
@@ -162,10 +162,10 @@ async def test_dice_debug_display_shift_register(capsys):
     virtual_pins = [(shift_register, i) for i in range(7)]
     dice = RollingDice(virtual_pins)
     capsys.readouterr()  # Clear previous output
-    
+
     dice.debug_display()
     captured = capsys.readouterr()
-    
+
     expected_output = """
 Dice LED Pin Layout:
 
@@ -180,5 +180,5 @@ Dice LED Pin Layout:
 
    (sr_0,5)     (sr_0,6)
    (LL)   (LR)"""
-    
+
     assert captured.out.strip() == expected_output.strip()

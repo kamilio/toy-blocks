@@ -11,22 +11,22 @@ help:
 
 install:
 	@echo "Installing dependencies..."
-	pip install -r requirements.txt
+	python3 -m pip install -r requirements.txt
 	@echo "✓ Dependencies installed"
 
 format:
 	@echo "Formatting Python files..."
-	python -m ruff format .
-	python -m ruff check --fix .
+	python3 -m ruff format .
+	python3 -m ruff check --fix .
 	@echo "✓ Code formatted"
 
 check:
 	@echo "Checking code for issues..."
-	python -m ruff check .
+	python3 -m ruff check .
 
 test:
 	@echo "Running tests..."
-	python -m pytest
+	python3 -m pytest
 
 clean:
 	@echo "Cleaning up..."

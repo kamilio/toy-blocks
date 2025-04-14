@@ -1,10 +1,12 @@
-from machine import Pin
-from lib.led import Led
-from lib.logger import Logger
 import time
 
+from machine import Pin
+
+from lib.led import Led
+from lib.logger import Logger
+
 # SN74HC595N
-#       ┌───────┐   
+#       ┌───────┐
 #   1 ──┤O      ├── 16
 #   2 ──┤       ├── 15
 #   3 ──┤       ├── 14
@@ -27,7 +29,7 @@ import time
 #       └───────────────────┘
 
 # Wire color coding
-# ser - DS (Data Serial) - Blue 
+# ser - DS (Data Serial) - Blue
 # rclk - STCP (Storage Register Clock) - Green
 # srclk - SHCP (Shift Register Clock) - Yellow
 
@@ -72,23 +74,23 @@ class ShiftRegister:
 
     def set_pin(self, position, value):
         if not 0 <= position < 8:
-            raise ValueError("Position must be between 0 and 7")
-        
+            raise ValueError('Position must be between 0 and 7')
+
         # Use LSB ordering for internal state storage
         mask = 1 << position
         if value:
             self.state[self.position] |= mask
         else:
             self.state[self.position] &= ~mask
-            
+
         # Only update the physical shift register if not in batch mode
         if not self.batch_mode:
             self.update()
-            
+
     def begin_batch(self):
         """Enter batch mode - defer updates until end_batch is called"""
         self.batch_mode = True
-        
+
     def end_batch(self):
         """Exit batch mode and apply all pending updates"""
         self.batch_mode = False
@@ -96,8 +98,8 @@ class ShiftRegister:
 
     def get_pin(self, position):
         if not 0 <= position < 8:
-            raise ValueError("Position must be between 0 and 7")
-        
+            raise ValueError('Position must be between 0 and 7')
+
         # Use LSB ordering for internal state
         mask = 1 << position
         return 1 if self.state[self.position] & mask else 0
@@ -114,9 +116,11 @@ class ShiftRegister:
 
     def next(self):
         if self.position >= self.registers - 1:
-            raise ValueError("No more registers in chain")
-        return ShiftRegister(self.ser, self.rclk, self.srclk, self.registers, self.position + 1, self.state)
-        
+            raise ValueError('No more registers in chain')
+        return ShiftRegister(
+            self.ser, self.rclk, self.srclk, self.registers, self.position + 1, self.state
+        )
+
     def test_sequence(self):
         """Run a test sequence to verify shift register operation"""
         # First clear everything
@@ -126,16 +130,19 @@ class ShiftRegister:
             self.set_pin(i, True)
             # Wait a bit to see the LED
             import time
+
             time.sleep(0.5)
         # Then turn off each LED one by one
         for i in range(8):
             self.set_pin(i, False)
             import time
+
             time.sleep(0.5)
         # Finally do a blink pattern
         for _ in range(3):
             self.fill()
             import time
+
             time.sleep(0.5)
             self.clear()
             time.sleep(0.5)
@@ -172,6 +179,7 @@ class ShiftRegister:
     def q7(self):
         return (self, 7)
 
+
 class VirtualPin:
     def __init__(self, shift_register, position):
         self.shift_register = shift_register
@@ -183,12 +191,15 @@ class VirtualPin:
             return None
         return self.shift_register.get_pin(self.position)
 
+
 class ShiftRegisterLed(Led):
-    def __init__(self, shift_register, position, active_low=True):  # Default to active_low=True since we found LEDs are active low
+    def __init__(
+        self, shift_register, position, active_low=True
+    ):  # Default to active_low=True since we found LEDs are active low
         self._virtual_pin = VirtualPin(shift_register, position)
-        self.logger = Logger(prefix=f"LED{position}", debug=False)
+        self.logger = Logger(prefix=f'LED{position}', debug=False)
         self.logger.set_threshold(0.5)
-        
+
         self.active_low = active_low  # Set this before super().__init__
         super().__init__(self._virtual_pin, active_low)
 
@@ -201,7 +212,9 @@ class ShiftRegisterLed(Led):
         return self._virtual_pin.position
 
     def _set_value(self, value):
-        self.logger.info(f"Setting to {'ON' if value else 'OFF'} (active {'low' if self.active_low else 'high'})")
+        self.logger.info(
+            f"Setting to {'ON' if value else 'OFF'} (active {'low' if self.active_low else 'high'})"
+        )
         pin_value = not value if self.active_low else value
         self._virtual_pin.value(pin_value)
 

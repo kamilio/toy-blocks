@@ -1,5 +1,6 @@
 import pytest
 
+
 class MockShiftRegister:
     def __init__(self):
         self.state = bytearray([0xFF])  # Initialize with 0xFF like the real implementation
@@ -14,15 +15,18 @@ class MockShiftRegister:
 
     def set_pin(self, position, value):
         if not 0 <= position < 8:
-            raise ValueError("Position must be between 0 and 7")
+            raise ValueError('Position must be between 0 and 7')
         if value:
-            self.state[0] |= (1 << position)
+            self.state[0] |= 1 << position
         else:
             self.state[0] &= ~(1 << position)
         self.pins[position] = value
 
+
 class ShiftRegisterLed:
-    def __init__(self, shift_register, position, active_low=True):  # Default to active_low=True like real implementation
+    def __init__(
+        self, shift_register, position, active_low=True
+    ):  # Default to active_low=True like real implementation
         self.shift_register = shift_register
         self.position = position
         self.active_low = active_low
@@ -46,6 +50,7 @@ class ShiftRegisterLed:
     def _set_value(self, value):
         actual_value = not value if self.active_low else value
         self.shift_register.set_pin(self.position, actual_value)
+
 
 @pytest.fixture
 def mock_shift_register():

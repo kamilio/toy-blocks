@@ -1,6 +1,8 @@
 from time import time
+
 import machine
 import uasyncio
+
 
 class AutoShutdown:
     def __init__(self, timeout):
