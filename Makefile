@@ -1,12 +1,18 @@
-.PHONY: help format check test clean
+.PHONY: help install format check test clean
 
 help:
 	@echo "Available commands:"
 	@echo "  make help    - Show this help message"
+	@echo "  make install - Install project dependencies"
 	@echo "  make format  - Format Python code using Ruff"
 	@echo "  make check   - Check code for linting issues"
 	@echo "  make test    - Run all tests"
 	@echo "  make clean   - Remove Python cache files"
+
+install:
+	@echo "Installing dependencies..."
+	pip install -r requirements.txt
+	@echo "✓ Dependencies installed"
 
 format:
 	@echo "Formatting Python files..."
