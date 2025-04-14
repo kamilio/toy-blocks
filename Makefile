@@ -1,0 +1,31 @@
+.PHONY: help format check test clean
+
+help:
+	@echo "Available commands:"
+	@echo "  make help    - Show this help message"
+	@echo "  make format  - Format Python code using Ruff"
+	@echo "  make check   - Check code for linting issues"
+	@echo "  make test    - Run all tests"
+	@echo "  make clean   - Remove Python cache files"
+
+format:
+	@echo "Formatting Python files..."
+	python -m ruff format .
+	python -m ruff check --fix .
+	@echo "✓ Code formatted"
+
+check:
+	@echo "Checking code for issues..."
+	python -m ruff check .
+
+test:
+	@echo "Running tests..."
+	python -m pytest
+
+clean:
+	@echo "Cleaning up..."
+	find . -type d -name "__pycache__" -exec rm -rf {} +
+	find . -type d -name ".pytest_cache" -exec rm -rf {} +
+	find . -type d -name ".ruff_cache" -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete
+	@echo "✓ Clean complete"
