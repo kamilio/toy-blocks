@@ -1,41 +1,22 @@
-import time
 from unittest.mock import MagicMock, patch
 
 from lib.power_cycle_detector import PowerCycleDetector
-
-
-class MockTime:
-    _current_time = 0
-
-    @classmethod
-    def ticks_ms(cls):
-        return cls._current_time
-
-    @classmethod
-    def ticks_diff(cls, end, start):
-        return end - start
-
-    @classmethod
-    def set_time(cls, time_ms):
-        cls._current_time = time_ms
-
-
-# Replace time module functions with our mock
-time.ticks_ms = MockTime.ticks_ms
-time.ticks_diff = MockTime.ticks_diff
-
+from lib.time_mock import mock_time, set_time
 
 class TestPowerCycleDetector:
     def setup_method(self):
-        MockTime.set_time(0)
+        set_time(0)
         self.rtc_mock = MagicMock()
         self.rtc_memory = bytearray([0] * 5)
         self.rtc_mock.return_value.memory.side_effect = self.mock_memory
         self.rtc_patcher = patch('machine.RTC', self.rtc_mock)
+        self.time_patcher = patch('lib.power_cycle_detector.time', mock_time)
         self.rtc_patcher.start()
+        self.time_patcher.start()
 
     def teardown_method(self):
         self.rtc_patcher.stop()
+        self.time_patcher.stop()
 
     def mock_memory(self, value=None):
         if value is not None:
@@ -63,7 +44,7 @@ class TestPowerCycleDetector:
 
     def test_update_boot_sequence_first_boot(self):
         detector = PowerCycleDetector()
-        MockTime.set_time(1000)
+        set_time(1000 * 1000)  # Convert to microseconds
         detector.update_boot_sequence()
 
         assert detector.boot_count == 1
@@ -73,17 +54,17 @@ class TestPowerCycleDetector:
         detector = PowerCycleDetector()
 
         # First boot
-        MockTime.set_time(1000)
+        set_time(1000 * 1000)
         detector.update_boot_sequence()
         assert detector.boot_count == 1
 
         # Second boot within window
-        MockTime.set_time(2000)
+        set_time(2000 * 1000)
         detector.update_boot_sequence()
         assert detector.boot_count == 2
 
         # Third boot within window
-        MockTime.set_time(3000)
+        set_time(3000 * 1000)
         detector.update_boot_sequence()
         assert detector.boot_count == 3
         assert detector.is_rapid_boot_sequence()
@@ -92,12 +73,12 @@ class TestPowerCycleDetector:
         detector = PowerCycleDetector()
 
         # First boot
-        MockTime.set_time(1000)
+        set_time(1000 * 1000)
         detector.update_boot_sequence()
         assert detector.boot_count == 1
 
         # Second boot outside window
-        MockTime.set_time(7000)
+        set_time(7000 * 1000)
         detector.update_boot_sequence()
         assert detector.boot_count == 1  # Should reset to 1
         assert not detector.is_rapid_boot_sequence()
@@ -106,11 +87,11 @@ class TestPowerCycleDetector:
         detector = PowerCycleDetector(time_window_ms=5000)
 
         # First boot
-        MockTime.set_time(1000)
+        set_time(1000 * 1000)
         detector.update_boot_sequence()
 
         # Boot exactly at window boundary
-        MockTime.set_time(6000)  # 5000ms after first boot
+        set_time(6000 * 1000)  # 5000ms after first boot
         detector.update_boot_sequence()
         assert detector.boot_count == 1  # Should reset as it's at boundary
 
@@ -118,7 +99,7 @@ class TestPowerCycleDetector:
         detector = PowerCycleDetector(cycles_threshold=3)
 
         for i in range(1, 4):
-            MockTime.set_time(i * 1000)
+            set_time(i * 1000 * 1000)
             detector.update_boot_sequence()
             if i < 3:
                 assert not detector.is_rapid_boot_sequence()
@@ -130,12 +111,12 @@ class TestPowerCycleDetector:
 
         # Simulate rapid boots
         for i in range(3):
-            MockTime.set_time(i * 1000)
+            set_time(i * 1000 * 1000)
             detector.update_boot_sequence()
 
         assert detector.is_rapid_boot_sequence()
 
-        MockTime.set_time(4000)
+        set_time(4000 * 1000)
         detector.reset_sequence()
 
         assert detector.boot_count == 0
@@ -145,7 +126,7 @@ class TestPowerCycleDetector:
     def test_memory_persistence(self):
         detector = PowerCycleDetector()
 
-        MockTime.set_time(1000)
+        set_time(1000 * 1000)
         detector.update_boot_sequence()
 
         assert self.rtc_memory[0] == 1  # boot_count
