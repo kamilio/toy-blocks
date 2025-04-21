@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 from lib.power_cycle_detector import PowerCycleDetector
 from lib.time_mock import mock_time, set_time
 
+
 class TestPowerCycleDetector:
     def setup_method(self):
         set_time(0)

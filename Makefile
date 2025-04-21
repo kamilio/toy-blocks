@@ -1,13 +1,14 @@
-.PHONY: help install format check test clean
+.PHONY: help install format format-unsafe check test clean
 
 help:
 	@echo "Available commands:"
-	@echo "  make help    - Show this help message"
-	@echo "  make install - Install project dependencies"
-	@echo "  make format  - Format Python code using Ruff"
-	@echo "  make check   - Check code for linting issues"
-	@echo "  make test    - Run all tests"
-	@echo "  make clean   - Remove Python cache files"
+	@echo "  make help         - Show this help message"
+	@echo "  make install      - Install project dependencies"
+	@echo "  make format       - Format Python code using Ruff"
+	@echo "  make format-unsafe - Format Python code using Ruff with unsafe fixes"
+	@echo "  make check        - Check code for linting issues"
+	@echo "  make test         - Run all tests"
+	@echo "  make clean        - Remove Python cache files"
 
 install:
 	@echo "Installing dependencies..."
@@ -19,6 +20,12 @@ format:
 	python3 -m ruff format .
 	python3 -m ruff check --fix .
 	@echo "✓ Code formatted"
+
+format-unsafe:
+	@echo "Formatting Python files with unsafe fixes..."
+	python3 -m ruff format .
+	python3 -m ruff check --fix --unsafe-fixes .
+	@echo "✓ Code formatted with unsafe fixes"
 
 check:
 	@echo "Checking code for issues..."
