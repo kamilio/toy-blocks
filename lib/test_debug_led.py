@@ -1,63 +1,53 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from board_config import BoardConfig
 from debug_led import DebugLed
 
 
-# Create a mock BoardConfig for testing
-@pytest.fixture
-def mock_board_config():
-    mock_config = MagicMock(spec=BoardConfig)
-    mock_config.LED_PIN = 2
-    mock_config.is_builtin_led_active_low.return_value = False
-    return mock_config
-
-
 @pytest.mark.asyncio
-async def test_debug_init(mock_board_config):
-    debug = DebugLed(mock_board_config)
+async def test_debug_init():
+    debug = DebugLed(pin_config=None, pin=2, active_low=False)
     assert debug.led.mode == debug.led.OUT
 
 
 @pytest.mark.asyncio
-async def test_debug_on(mock_board_config):
-    debug = DebugLed(mock_board_config)
+async def test_debug_on():
+    debug = DebugLed(pin_config=None, pin=2, active_low=False)
     debug.on()
     assert debug._get_value() == 1
 
 
 @pytest.mark.asyncio
-async def test_debug_off(mock_board_config):
-    debug = DebugLed(mock_board_config)
+async def test_debug_off():
+    debug = DebugLed(pin_config=None, pin=2, active_low=False)
     debug.off()
     assert debug._get_value() == 0
 
 
 @pytest.mark.asyncio
-async def test_debug_on_active_low(mock_board_config):
-    debug = DebugLed(mock_board_config, active_low=True)
+async def test_debug_on_active_low():
+    debug = DebugLed(pin_config=None, pin=2, active_low=True)
     debug.on()
     assert debug._get_value() == 1
 
 
 @pytest.mark.asyncio
-async def test_debug_off_active_low(mock_board_config):
-    debug = DebugLed(mock_board_config, active_low=True)
+async def test_debug_off_active_low():
+    debug = DebugLed(pin_config=None, pin=2, active_low=True)
     debug.off()
     assert debug._get_value() == 0
 
 
 @pytest.mark.asyncio
-async def test_debug_blink_active_low(mock_board_config):
-    debug = DebugLed(mock_board_config, active_low=True)
+async def test_debug_blink_active_low():
+    debug = DebugLed(pin_config=None, pin=2, active_low=True)
     await debug.blink(count=1, interval=0.1)
     assert debug._get_value() == debug._prev_state
 
 
 @pytest.mark.asyncio
-async def test_debug_blink_preserves_state(mock_board_config):
-    debug = DebugLed(mock_board_config)
+async def test_debug_blink_preserves_state():
+    debug = DebugLed(pin_config=None, pin=2, active_low=False)
     debug.on()
     await debug.blink(count=1, interval=0.1)
     assert debug._get_value() == 1
@@ -68,8 +58,8 @@ async def test_debug_blink_preserves_state(mock_board_config):
 
 
 @pytest.mark.asyncio
-async def test_debug_blink(mock_board_config):
-    debug = DebugLed(mock_board_config)
+async def test_debug_blink():
+    debug = DebugLed(pin_config=None, pin=2, active_low=False)
     initial_state = debug._get_value()
     await debug.blink(count=2, interval=0.1)
     assert debug._get_value() == initial_state
@@ -80,8 +70,8 @@ async def mock_sleep_with_interrupt(*args):
 
 
 @pytest.mark.asyncio
-async def test_blink_forever_start(mock_board_config):
-    debug = DebugLed(mock_board_config)
+async def test_blink_forever_start():
+    debug = DebugLed(pin_config=None, pin=2, active_low=False)
     try:
         with patch('uasyncio.sleep', mock_sleep_with_interrupt):
             await debug.blink_forever(interval=0.1)
@@ -91,25 +81,22 @@ async def test_blink_forever_start(mock_board_config):
 
 
 @pytest.mark.asyncio
-async def test_stop_blinking(mock_board_config):
-    debug = DebugLed(mock_board_config)
+async def test_stop_blinking():
+    debug = DebugLed(pin_config=None, pin=2, active_low=False)
     debug._blink_forever = True
     debug.stop_blinking()
     assert not debug._blink_forever
 
 
 @pytest.mark.asyncio
-async def test_debug_blink_three_times_active_low(mock_pin, mock_board_config):
+async def test_debug_blink_three_times_active_low(mock_pin):
     print('\nStarting blink test...')
     pin = 2
     mock_pin = mock_pin(pin)  # Get pin instance before creating DebugLed
     print(f'Initial pin state - value: {mock_pin.value()}, history: {mock_pin.history}')
 
-    # Configure mock to return the custom pin
-    mock_board_config.LED_PIN = pin
-
-    led = DebugLed(mock_board_config, active_low=True)
-    print(f'Created DebugLed with board_config, pin={pin}, active_low=True')
+    led = DebugLed(pin_config=None, pin=pin, active_low=True)
+    print(f'Created DebugLed with pin={pin}, active_low=True')
 
     # Mock sleep to be synchronous
     async def mock_sleep(t):

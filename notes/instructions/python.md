@@ -40,6 +40,10 @@ def stop(self):
 - define callbacks (listeners) that execute actions
 - asyncio.gather() to monitor all components
 
+# Pin config
+- Define a new subclass of lib/pin_config.py
+- Subclass lives in `main.py`
+
 
 # Testing
 Make sure to add tests
@@ -51,9 +55,10 @@ Mocking
 
 # Verify files
 - Create only when specifically requested
+- It should have a single method `async verify_{something}(pin_config):`
 - Simplest possible way to test the component, whether the wiring is correct e.g. beeper should beep and we are done
-- main() method, however it should be only requested explicitely
-- I will include this file in my project for debuggin when needed
+- I will include this file in my project for debuggin when needed, do not call anywhere
+- Never add this `if __name__ == "__main__": main()`
 
 
 # Other files when writing python code

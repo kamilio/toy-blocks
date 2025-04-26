@@ -1,11 +1,19 @@
 import uasyncio
 from auto_shutdown import AutoShutdown
-from board_config import BoardConfig
 from button import DebouncedButton
 from debug_led import DebugLed
+from pin_config import PinConfigEsp32
 from wifi import WiFi
 
-auto_shutdown = AutoShutdown(timeout=60)  # 600 seconds = 10 minutes
+class ButtonControllerPinConfig(PinConfigEsp32):
+    """ESP32 pin configuration for button controller"""
+    LED_PIN = 2
+    BOOT_BUTTON = 0
+    
+    def is_builtin_led_active_low(self):
+        return False
+
+auto_shutdown = AutoShutdown(timeout=60)  # 60 seconds = 1 minute
 wifi = WiFi()
 
 
@@ -14,9 +22,9 @@ async def handle_click():
     await debug_led.blink(3, 0.2)
 
 
-board_config = BoardConfig()
-debug_led = DebugLed(board_config=board_config)
-button = DebouncedButton(board_config.BOOT_BUTTON)
+pin_config = ButtonControllerPinConfig()
+debug_led = DebugLed(pin_config)
+button = DebouncedButton(pin_config.BOOT_BUTTON)
 button.on_press(handle_click)
 
 

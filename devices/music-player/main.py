@@ -2,31 +2,44 @@ import uasyncio
 
 from lib.audio_amplifier import AudioAmplifier
 from lib.auto_shutdown import AutoShutdown
-from lib.board_config import BoardConfig
 from lib.debug_led import DebugLed
+from lib.pin_config import PinConfigEsp32
 from lib.sd_card_reader import SDCardReader
 
 # Hardcoded WAV file path on SD card
 WAV_FILE_PATH = '/song.wav'
 
 
+class MusicPlayerPinConfig(PinConfigEsp32):
+    """ESP32 pin configuration for music player"""
+    SPI_MOSI = 23
+    SPI_MISO = 19
+    SPI_CLK = 18
+    SPI_CS = 5
+    LED_PIN = 2
+    sound_pin = 4
+    
+    def is_builtin_led_active_low(self):
+        return False
+
+
 async def main():
     try:
-        # Initialize board configuration
-        board_config = BoardConfig(detected_board='ESP32')  # Change to ESP32-C3 if needed
+        # Initialize pin configuration
+        pin_config = MusicPlayerPinConfig()
 
         # Set up auto shutdown after 10 minutes of inactivity
         auto_shutdown = AutoShutdown(timeout=600)  # 600 seconds = 10 minutes
 
         # Initialize debug LED
-        debug_led = DebugLed(board_config)
+        debug_led = DebugLed(pin_config)
 
         # Initialize SD card reader
         sd_reader = SDCardReader(
-            sck_pin=board_config.SPI_CLK,
-            mosi_pin=board_config.SPI_MOSI,
-            miso_pin=board_config.SPI_MISO,
-            cs_pin=board_config.SPI_CS,
+            sck_pin=pin_config.SPI_CLK,
+            mosi_pin=pin_config.SPI_MOSI,
+            miso_pin=pin_config.SPI_MISO,
+            cs_pin=pin_config.SPI_CS,
         )
 
         # Initialize the SD card
@@ -35,7 +48,7 @@ async def main():
         # Initialize audio amplifier (using PAM8403 analog amplifier)
         # You can change to MAX98357A if you're using that amplifier
         amplifier = AudioAmplifier(
-            data_pin=board_config.sound_pin,
+            data_pin=pin_config.sound_pin,
             amp_type=AudioAmplifier.PAM8403,
             volume=80,  # Set initial volume to 80%
         )

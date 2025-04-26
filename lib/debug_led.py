@@ -3,10 +3,10 @@ from machine import Pin
 
 
 class DebugLed:
-    def __init__(self, board_config, pin=None, active_low=None):
-        pin = pin if pin is not None else board_config.LED_PIN
+    def __init__(self, pin_config, pin=None, active_low=None):
+        pin = pin if pin is not None else pin_config.LED_PIN
         active_low = (
-            active_low if active_low is not None else board_config.is_builtin_led_active_low()
+            active_low if active_low is not None else pin_config.is_builtin_led_active_low()
         )
         self.led = Pin(pin, Pin.OUT)
         self.active_low = active_low

@@ -4,17 +4,14 @@ This tries several different approaches to turning on all LEDs.
 """
 
 import time
-
-from board_config import BoardConfig
 from shift_register import ShiftRegister
 
 
-def main():
+async def verify_shift_register(pin_config):
     print('=== Shift Register All-On Test ===')
 
-    # Initialize board and shift register
-    board_config = BoardConfig()
-    pins = board_config.shift_register_pins
+    # Initialize shift register using provided pin configuration
+    pins = pin_config.shift_register_pins
 
     print(
         f"Creating shift register with pins: "

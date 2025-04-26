@@ -3,18 +3,29 @@ import random
 import uasyncio
 
 from lib.auto_shutdown import AutoShutdown
-from lib.board_config import BoardConfig
 from lib.button import DebouncedButton
 from lib.led_matrix import ANIMATION_STATES, LedMatrix
+from lib.pin_config import PinConfigEsp32C3
 from lib.shift_register import ShiftRegister
+
+
+class CubeLedPinConfig(PinConfigEsp32C3):
+    """ESP32-C3 pin configuration for cube LED animation"""
+    @property
+    def shift_register_pins(self):
+        return {
+            'ser': 0,  # Serial data
+            'rclk': 1,  # Register clock
+            'srclk': 2,  # Shift register clock
+        }
 
 
 async def main():
     try:
-        board_config = BoardConfig(detected_board='ESP32-C3')
+        pin_config = CubeLedPinConfig()
         auto_shutdown = AutoShutdown(timeout=600)  # 600 seconds = 10 minutes
 
-        pins = board_config.shift_register_pins
+        pins = pin_config.shift_register_pins
         shift_register = ShiftRegister(ser=pins['ser'], rclk=pins['rclk'], srclk=pins['srclk'])
 
         led_matrix = LedMatrix(
@@ -31,7 +42,7 @@ async def main():
             current_animation=random.choice(ANIMATION_STATES),
         )
 
-        board_button = DebouncedButton(board_config.BOOT_BUTTON)
+        board_button = DebouncedButton(pin_config.BOOT_BUTTON)
 
         async def cycle_animation():
             print('Cycling animation')

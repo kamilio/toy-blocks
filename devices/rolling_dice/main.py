@@ -47,7 +47,7 @@ async def main():
             await rolling_dice.roll(6 if was_pressed else None)
 
         # Set up BOOT button
-        boot_button = DebouncedButton(PinConfig.boot_button)
+        boot_button = DebouncedButton(PinConfig.BOOT_BUTTON)
         boot_button.on_press(handle_roll)
 
         # Set up capacitive touch sensor with our specialized class
