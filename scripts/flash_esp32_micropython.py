@@ -4,7 +4,6 @@ import argparse
 import os
 import subprocess
 import sys
-from typing import Any
 
 BOARDS = {
     'esp32': {
@@ -28,12 +27,12 @@ BOARDS = {
 }
 
 
-def get_default_firmware(board_type: str) -> str:
+def get_default_firmware(board_type):
     bin_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'bin')
     return os.path.join(bin_dir, BOARDS[board_type]['firmware'])
 
 
-def flash_esp32(board_config: dict[str, Any], port: str, firmware: str) -> bool:
+def flash_esp32(board_config, port, firmware):
     try:
         print(f"Flashing {board_config['name']}...")
         print(f'Erasing flash on {port}...')

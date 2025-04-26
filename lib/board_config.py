@@ -104,7 +104,8 @@ class BoardConfig:
     @property
     def dice_pins(self):
         if self._detected_board == 'ESP32-C3':
-            return [5, 4, 1, 6, 3, 7, 2]
+            # Pins layout: [TL, TR, MID, BL, BR, LL, LR]
+            return [5, 4, 12, 6, 13, 7, 2]
 
         # Return 7 pins for the dice display
         # Using available GPIO pins that don't conflict with other functionalities

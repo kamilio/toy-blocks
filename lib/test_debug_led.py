@@ -1,4 +1,3 @@
-import contextlib
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -83,8 +82,11 @@ async def mock_sleep_with_interrupt(*args):
 @pytest.mark.asyncio
 async def test_blink_forever_start(mock_board_config):
     debug = DebugLed(mock_board_config)
-    with patch('uasyncio.sleep', mock_sleep_with_interrupt), contextlib.suppress(KeyboardInterrupt):
-        await debug.blink_forever(interval=0.1)
+    try:
+        with patch('uasyncio.sleep', mock_sleep_with_interrupt):
+            await debug.blink_forever(interval=0.1)
+    except KeyboardInterrupt:
+        pass
     assert debug._blink_forever
 
 

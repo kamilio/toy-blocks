@@ -56,8 +56,8 @@ class CapacitiveTouchSensor:
 
         # State tracking
         self.touched = False
-        self.last_touch_time = 0
-        self.last_state_change = 0
+        self.last_touch_time = 0.0
+        self.last_state_change = 0.0  # Initialize as float to match time.time() return type
         self._running = False
 
         # Callbacks

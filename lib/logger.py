@@ -1,4 +1,3 @@
-import contextlib
 import time
 
 
@@ -19,8 +18,10 @@ class Logger:
 
         self._last_log = current_time
 
-        with contextlib.suppress(Exception):
+        try:
             print(f'[{self.prefix}] {message}')
+        except Exception:
+            pass
 
     def info(self, message):
         self._log(message)

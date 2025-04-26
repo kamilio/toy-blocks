@@ -3,7 +3,6 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
 
 def merge_pymakr_config(device_type: str, project_root: Path, device_dir: Path):
@@ -31,7 +30,7 @@ def create_symlink(src: Path, dest: Path):
     os.symlink(str(src), str(dest))
 
 
-def switch_device(device_type: str, project_root: Optional[Path] = None):
+def switch_device(device_type: str, project_root=None):
     if project_root is None:
         project_root = Path(__file__).parent.parent
 

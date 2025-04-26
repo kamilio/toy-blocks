@@ -1,5 +1,3 @@
-from typing import Any, ClassVar
-
 import pytest
 
 
@@ -9,7 +7,7 @@ class MockPin:
     PULL_UP = 'pull_up'
     PULL_DOWN = 'pull_down'
 
-    _instances: ClassVar[dict[Any, 'MockPin']] = {}
+    _instances = {}
 
     def __new__(cls, id, mode=OUT, pull=None):
         existing_instance = cls._instances.get(id)

@@ -1,6 +1,4 @@
 import random
-from typing import ClassVar
-
 import uasyncio as asyncio
 
 from lib.led import Led
@@ -12,7 +10,7 @@ class RollingDice:
     #     MID       [2]
     #    BL    BR    [3,4]
     #    LL    LR    [5,6]
-    DICE_PATTERNS: ClassVar[dict[int, list[int]]] = {
+    DICE_PATTERNS = {
         1: [0, 0, 1, 0, 0, 0, 0],  # Center only
         2: [0, 0, 0, 1, 1, 0, 0],  # Bottom left, Bottom right
         3: [0, 1, 1, 0, 0, 1, 0],  # Top right, Middle, Lower left
