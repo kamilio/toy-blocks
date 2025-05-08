@@ -16,9 +16,9 @@ class PinConfig(PinConfigEsp32C3):
     #    LL    LR
     rolling_dice_tl = 5  # Top Left
     rolling_dice_tr = 4  # Top Right
-    rolling_dice_mid = 12  # Middle
+    rolling_dice_mid = 1  # Middle
     rolling_dice_bl = 6  # Bottom Left
-    rolling_dice_br = 13  # Bottom Right
+    rolling_dice_br = 3  # Bottom Right
     rolling_dice_ll = 7  # Lower Left
     rolling_dice_lr = 2  # Lower Right
     
@@ -93,3 +93,4 @@ async def main():
 
 if __name__ == '__main__':
     uasyncio.run(main())
+
